@@ -1,0 +1,37 @@
+# KRX Data Explorer Backend Dependencies
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# KRX Data
+pykrx>=1.0.0
+
+# Web Automation (for KRX login)
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
+# HTTP Requests
+requests>=2.31.0
+aiohttp>=3.9.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Date/Time
+python-dateutil>=2.8.2
+
+# Embedding (for intent classification)
+sentence-transformers>=2.2.0
+
+# Optional: For better Korean tokenization
+# konlpy>=0.6.0
+
+# Development
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0  # For FastAPI testing
