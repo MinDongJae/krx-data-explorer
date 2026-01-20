@@ -2,6 +2,8 @@
 
 한국거래소(KRX) 주식 데이터를 조회하고 시각화하는 웹 애플리케이션입니다.
 
+![Architecture](docs/architecture-diagram.png)
+
 ## 📋 주요 기능
 
 ### 🔍 데이터 조회
@@ -16,29 +18,69 @@
 - **GraphicWalker**: 드래그 앤 드롭 방식의 무코드 데이터 시각화
 - **인터랙티브 차트**: 다양한 차트 유형 지원
 
+![UI Mockup](docs/ui-mockup.png)
+
 ### 💬 자연어 질의
 - 한국어로 질문하면 적절한 API를 자동 호출
 - 예: "삼성전자 PER 알려줘", "오늘 외국인 순매수 종목"
 
-## 🏗️ 프로젝트 구조
+![Data Flow](docs/data-flow-diagram.png)
+
+## 🏗️ 시스템 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend                                  │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────────────────┐   │
+│  │  React  │ │  Vite   │ │Tailwind │ │  GraphicWalker      │   │
+│  │   +TS   │ │         │ │   CSS   │ │  (시각화)           │   │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────────────────┘   │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ REST API
+┌────────────────────────────▼────────────────────────────────────┐
+│                        Backend                                   │
+│  ┌─────────┐ ┌─────────────────┐ ┌─────────────────────────┐   │
+│  │ FastAPI │ │ Intent          │ │ KRX Session Manager     │   │
+│  │         │ │ Classifier      │ │ (Selenium + Cookies)    │   │
+│  └─────────┘ └─────────────────┘ └─────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                    PyKRX (Patched)                       │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                   KRX Data Marketplace                          │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐              │
+│  │  OHLCV  │ │ Market  │ │Investor │ │ETF/ETN  │              │
+│  │  Data   │ │   Cap   │ │ Trading │ │  /ELW   │              │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## 📁 프로젝트 구조
 
 ```
 krx-data-explorer/
 ├── frontend/                 # React + TypeScript + Vite
 │   ├── src/
-│   │   ├── components/       # UI 컴포넌트
+│   │   ├── App.tsx           # 메인 애플리케이션
+│   │   ├── components/ui/    # shadcn/ui 컴포넌트
 │   │   ├── pages/            # 페이지 컴포넌트
-│   │   ├── hooks/            # 커스텀 훅
-│   │   ├── api/              # API 클라이언트
 │   │   └── lib/              # 유틸리티
-│   └── package.json
+│   ├── package.json
+│   └── vite.config.ts
 │
 ├── backend/                  # FastAPI + Python
-│   ├── main.py               # FastAPI 앱 및 API 엔드포인트
-│   ├── intent_classifier.py  # 자연어 의도 분류기
-│   ├── krx_session.py        # KRX 세션 관리
-│   ├── pykrx_with_login.py   # PyKRX 패치 모듈
+│   ├── main.py               # FastAPI 앱 (2,338줄, 40+ 엔드포인트)
+│   ├── intent_classifier.py  # 자연어 의도 분류기 (748줄)
+│   ├── krx_session.py        # KRX 세션 관리 (677줄)
+│   ├── pykrx_with_login.py   # PyKRX 패치 모듈 (148줄)
 │   └── requirements.txt
+│
+├── docs/                     # 문서 및 다이어그램
+│   ├── architecture-diagram.png
+│   ├── data-flow-diagram.png
+│   └── ui-mockup.png
 │
 └── README.md
 ```
@@ -86,9 +128,9 @@ npm run dev
 
 ### 접속
 
-- 프론트엔드: http://localhost:5173 (또는 5182)
+- 프론트엔드: http://localhost:5173
 - 백엔드 API: http://localhost:8000
-- API 문서: http://localhost:8000/docs
+- API 문서 (Swagger): http://localhost:8000/docs
 
 ## 📡 API 엔드포인트
 
@@ -152,6 +194,14 @@ PyKRX는 Windows에서 한글 인코딩 문제가 있습니다. 이 프로젝트
 - KRX Data Marketplace 계정이 필요합니다
 - 일부 데이터는 로그인 없이도 조회 가능합니다
 - 세션은 자동으로 유지되며 쿠키가 저장됩니다
+
+## 🛠️ 기술 스택
+
+| 구분 | 기술 |
+|------|------|
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, GraphicWalker |
+| **Backend** | FastAPI, Python 3.10+, PyKRX, Selenium, Pandas |
+| **Database** | KRX Data Marketplace (외부 API) |
 
 ## 📄 라이선스
 
