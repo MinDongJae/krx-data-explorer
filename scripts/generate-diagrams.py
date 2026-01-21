@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """
 KRX Data Explorer - 고품질 다이어그램 생성
-Gemini 2.5 Flash API 사용 (텍스트 렌더링 최적화)
+Gemini 2.5 Flash Image API 사용 (텍스트 렌더링 최적화)
+
+실제 프로젝트 UI 반영:
+- PyGWalker (Graphic Walker) 기반 데이터 시각화
+- 바이올렛/오렌지 테마 (violet-50, amber-500)
+- AI 자연어 질의 기능
+- KRX 주식 데이터 실시간 분석
 
 참고: https://developers.googleblog.com/en/how-to-prompt-gemini-2-5-flash-image-generation-for-the-best-results/
 """
@@ -11,11 +17,11 @@ import base64
 import os
 from pathlib import Path
 
-# Gemini API 설정 - 2.5 Flash로 업그레이드 (텍스트 렌더링 향상)
+# Gemini API 설정 - 2.5 Flash Image (텍스트 렌더링 향상)
 genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
 
 model = genai.GenerativeModel(
-    model_name='gemini-2.5-flash-image',  # 이미지 생성 전용 모델
+    model_name='gemini-2.5-flash-image',
     generation_config={
         'response_modalities': ['TEXT', 'IMAGE']
     }
@@ -39,21 +45,23 @@ def save_image(response, output_path):
     return False
 
 # ============================================================
-# 1. 히어로 배너 (프로젝트 소개) - Gemini로 생성
+# 1. 히어로 배너 (프로젝트 소개)
 # ============================================================
 print("1. Generating hero banner...")
 hero_prompt = """
-Create a professional, modern hero banner for a fintech data platform.
+Create a premium, modern hero banner for a Korean stock market data visualization platform.
 
-Scene description: A sleek, dark-themed financial dashboard interface floating in a deep navy blue digital space. The background has a subtle gradient from dark navy (#0a1628) to slightly lighter navy (#1a2744). Abstract geometric patterns of hexagons and circuit-like lines glow softly in electric blue (#3b82f6) in the background.
+Scene description: A wide landscape banner with a sophisticated gradient background flowing from soft lavender-violet (#8b5cf6) on the left to warm amber-orange (#f59e0b) on the right. The gradient should be smooth and elegant, reminiscent of a sunset over a financial district.
 
-In the center, display the title "KRX Data Explorer" in large, bold, clean white sans-serif typography (similar to Inter or SF Pro Display font). Below it, show the subtitle "Korea Exchange Stock Data Platform" in smaller, light gray text.
+In the center-left area, display the main title "KRX Data Explorer" in large, bold, crisp white sans-serif typography. The text should be perfectly sharp and readable, styled like Inter or Pretendard font. Below the main title, show the Korean subtitle "한국거래소 주식 데이터 시각화 플랫폼" in smaller light gray text.
 
-On the left side, include a simplified green candlestick chart icon showing 4 bars going upward. On the right side, show a minimal pie chart icon in teal color.
+On the right side of the banner, show a stylized preview of a data visualization dashboard: a floating glass-morphism card with a simple bar chart showing 5 colorful bars (orange, violet, teal, blue, green) representing different stock metrics. The chart should have clean gridlines and look professional.
 
-The overall style should be: minimalist, professional, fintech-inspired, with a Bloomberg Terminal or trading platform aesthetic. High contrast between text and background for maximum readability.
+Include subtle decorative elements: small floating sparkle icons near the title (representing AI features), and faint hexagonal patterns in the background suggesting technology and data.
 
-Dimensions: 1920x600 pixels, landscape orientation.
+Overall aesthetic: Premium SaaS product, modern fintech, clean and professional. High contrast for text readability. No cluttered elements.
+
+Dimensions: 1920x500 pixels, wide landscape format.
 """
 
 try:
@@ -63,32 +71,38 @@ except Exception as e:
     print(f"  [ERROR] {e}")
 
 # ============================================================
-# 2. 시스템 아키텍처 다이어그램 - Gemini로 생성
+# 2. 시스템 아키텍처 다이어그램
 # ============================================================
 print("2. Generating architecture diagram...")
 arch_prompt = """
-Create a clean, professional system architecture diagram with three horizontal layers.
+Create a clean, professional system architecture diagram showing the data flow of a stock market visualization platform.
 
-Scene description: A vertical stack of three rounded rectangular boxes on a pure white background, connected by downward-pointing arrows.
+Scene description: A diagram on a clean white background with three main sections connected by arrows, arranged vertically.
 
-TOP BOX (Sky Blue #3b82f6):
-- Contains bold white text "FRONTEND"
-- Below it in smaller white text: "React + TypeScript + Vite"
-- The box has subtle rounded corners and a light shadow
+TOP SECTION - "FRONTEND" (Violet #8b5cf6 rounded rectangle):
+- Inside the box, show text "React + TypeScript" in white
+- Below it: "PyGWalker Visualization" in smaller text
+- Include a small chart icon
 
-MIDDLE BOX (Deep Blue #1e40af):
-- Contains bold white text "BACKEND"
-- Below it in smaller white text: "FastAPI + PyKRX + NLP"
-- Connected from top box with a dark gray arrow labeled "REST API"
+MIDDLE SECTION - "BACKEND" (Orange #f59e0b rounded rectangle):
+- Inside the box, show text "FastAPI + Python" in white
+- Below it: "PyKRX + NLP Engine" in smaller text
+- Include a small server icon
 
-BOTTOM BOX (Emerald Green #10b981):
-- Contains bold white text "KRX DATA"
-- Below it in smaller white text: "OHLCV, Market Cap, ETF, Investor"
-- Connected from middle box with a dark gray arrow labeled "Web Scraping"
+BOTTOM SECTION - "DATA SOURCE" (Teal #14b8a6 rounded rectangle):
+- Inside the box, show text "KRX API" in white
+- Below it: "OHLCV, Market Cap, ETF" in smaller text
+- Include a small database icon
 
-Style: Clean technical diagram, minimal design, sans-serif fonts only, high contrast text, professional documentation style. All text must be perfectly legible and sharp.
+ARROWS connecting the sections:
+- Arrow from Frontend to Backend labeled "REST API"
+- Arrow from Backend to Data Source labeled "Real-time Data"
 
-Dimensions: 1200x800 pixels.
+Each box should have subtle shadows and rounded corners (16px radius). The arrows should be dark gray (#374151) with clean arrowheads.
+
+Style: Technical documentation quality, minimalist design, Inter font, professional enterprise software aesthetic.
+
+Dimensions: 1000x700 pixels.
 """
 
 try:
@@ -98,26 +112,37 @@ except Exception as e:
     print(f"  [ERROR] {e}")
 
 # ============================================================
-# 3. 데이터 플로우 다이어그램 - Gemini로 생성
+# 3. 데이터 플로우 다이어그램
 # ============================================================
 print("3. Generating data flow diagram...")
 flow_prompt = """
-Create a horizontal flowchart showing data flow from left to right.
+Create a horizontal data flow diagram showing how a user query becomes a visualization.
 
-Scene description: Five connected shapes arranged horizontally on a clean white background, with gray arrows pointing right between each shape.
+Scene description: Five connected elements arranged in a horizontal line on a clean white background, with arrows pointing from left to right.
 
 From left to right:
-1. BLUE CIRCLE - Contains text "User Query" in white
-2. PURPLE ROUNDED RECTANGLE - Contains text "NLP Classifier" in white
-3. ORANGE ROUNDED RECTANGLE - Contains text "API Router" in white
-4. GREEN ROUNDED RECTANGLE - Contains text "KRX Data" in white
-5. BLUE CIRCLE - Contains text "Response" in white
 
-Each shape has a subtle drop shadow. The arrows between shapes are gray (#6b7280) and have pointed tips.
+1. VIOLET CIRCLE (#8b5cf6): Contains a user icon and text "Query" below. This represents the user asking a question like "Show Samsung stock PER".
 
-Style: Professional flowchart, clean lines, bold sans-serif text, high readability, technical documentation aesthetic.
+2. ORANGE RECTANGLE (#f59e0b): Contains a brain/AI icon and text "NLP Engine" below. This parses the natural language query.
 
-Dimensions: 1400x400 pixels, wide landscape format.
+3. BLUE RECTANGLE (#3b82f6): Contains a server icon and text "PyKRX API" below. This fetches real-time stock data.
+
+4. TEAL RECTANGLE (#14b8a6): Contains a chart icon and text "Processing" below. This transforms data for visualization.
+
+5. GREEN CIRCLE (#10b981): Contains a checkmark icon and text "Chart" below. This shows the final visualization result.
+
+Each element should be clearly labeled with crisp, readable text. The connecting arrows should be gray (#6b7280) with smooth curves and pointed tips.
+
+Add small descriptive labels above each arrow:
+- "Natural Language" (between 1 and 2)
+- "Fetch Data" (between 2 and 3)
+- "Transform" (between 3 and 4)
+- "Render" (between 4 and 5)
+
+Style: Clean flowchart, professional documentation quality, high contrast text, Inter font.
+
+Dimensions: 1400x350 pixels, wide format.
 """
 
 try:
@@ -127,37 +152,46 @@ except Exception as e:
     print(f"  [ERROR] {e}")
 
 # ============================================================
-# 4. UI 목업 - Gemini로 생성 (다크 대시보드)
+# 4. UI 목업 (실제 프로젝트 UI 반영)
 # ============================================================
 print("4. Generating UI mockup...")
 ui_prompt = """
-Create a dark-themed financial dashboard UI mockup, similar to Bloomberg Terminal or TradingView.
+Create a realistic UI mockup of a Korean stock market data visualization dashboard.
 
-Scene description: A full dashboard interface with dark gray background (#111827).
+Scene description: A full-screen dashboard interface with a light theme and subtle violet accents.
 
-TOP NAVIGATION BAR (darker gray #0f172a):
-- Left: Logo text "KRX Explorer" in white
-- Center: A search input field with placeholder text
-- Right: A simple user avatar circle
+HEADER BAR (white with bottom border):
+- Left side: Orange icon (trending chart) + text "KRX Data Explorer" in bold black
+- Center: Connection status badge showing "PyKRX Connected" in green
+- Right side: "CSV Upload" button and settings icon
 
-LEFT SIDEBAR (dark gray #1f2937, narrow):
-- Menu items in vertical list, white text:
-  "Dashboard" (highlighted with blue accent)
-  "OHLCV Data"
-  "Market Cap"
-  "Investors"
-  "ETF/ETN"
+MAIN CONTENT AREA (light gray #f8fafc background):
 
-MAIN CONTENT AREA:
-- Header showing "Samsung Electronics" in large white text
-- Stock code "005930" in gray
-- Large green price "71,200" with up arrow and "+2.3%"
-- Below: Four metric cards in a row showing:
-  "PER 12.5" | "PBR 1.2" | "Volume 15M" | "MCap 450T"
-- Below cards: A simple green line chart on dark background
-- Bottom: A data table with 5 rows of stock data
+TOP SECTION - AI Query Box:
+- A rounded input box with violet border
+- Placeholder text "Ask in Korean: Show Samsung PER chart"
+- Send button with violet background
+- Small "AI" badge with sparkle icon
 
-Style: Modern fintech dashboard, dark mode, clean typography, professional trading platform aesthetic. All text must be sharp and perfectly readable.
+VISUALIZATION AREA (white card with shadow):
+- A professional bar chart showing Korean stock data:
+  - X-axis: Company names in Korean (Samsung, SK Hynix, NAVER, Hyundai, LG Chem)
+  - Y-axis: Values from 0 to 500,000
+  - Colorful bars (violet, orange, teal, blue, green)
+  - Title: "Stock Price Comparison" in Korean
+  - Clean gridlines and axis labels
+
+BOTTOM SECTION - Data Table:
+- A clean data table with columns:
+  - Stock Code | Company | Price | Change% | Volume
+- 5 rows of sample data
+- Alternating row colors (white and light gray)
+
+RIGHT PANEL (floating):
+- PyGWalker toolbar with chart type icons
+- Filter options
+
+Style: Modern SaaS dashboard, clean typography, subtle shadows, professional fintech aesthetic. The UI should look like a real production application, not a mockup sketch.
 
 Dimensions: 1920x1080 pixels.
 """
@@ -169,35 +203,57 @@ except Exception as e:
     print(f"  [ERROR] {e}")
 
 # ============================================================
-# 5. 기능 그리드 - Gemini로 생성
+# 5. 기능 그리드 (Features Grid)
 # ============================================================
 print("5. Generating features grid...")
 features_prompt = """
-Create a feature showcase grid with 6 feature cards arranged in 2 rows of 3.
+Create a professional feature showcase grid with 6 cards arranged in 2 rows of 3.
 
-Scene description: Six white cards with rounded corners arranged in a grid pattern on a light gray (#f1f5f9) background.
+Scene description: Six feature cards on a subtle gradient background (white to light violet #faf5ff).
 
-ROW 1 (left to right):
-- Card 1: Blue circle icon, text "OHLCV Data" below, subtitle "Price & Volume"
-- Card 2: Green circle icon, text "Market Cap" below, subtitle "Company Size"
-- Card 3: Purple circle icon, text "Investor Flow" below, subtitle "Buy/Sell Trends"
+ROW 1:
+Card 1 (Violet icon #8b5cf6):
+- Icon: Bar chart
+- Title: "OHLCV Data"
+- Subtitle: "Real-time price & volume"
 
-ROW 2 (left to right):
-- Card 4: Orange circle icon, text "NL Query" below, subtitle "Ask in Korean"
-- Card 5: Teal circle icon, text "ETF/ETN" below, subtitle "Derivatives"
-- Card 6: Red circle icon, text "Search" below, subtitle "Find Stocks"
+Card 2 (Orange icon #f59e0b):
+- Icon: Pie chart
+- Title: "Market Cap"
+- Subtitle: "Company valuations"
 
-Each card has:
-- White background
-- Subtle shadow
+Card 3 (Teal icon #14b8a6):
+- Icon: Users
+- Title: "Investor Flow"
+- Subtitle: "Institution vs retail"
+
+ROW 2:
+Card 4 (Blue icon #3b82f6):
+- Icon: Sparkle/AI
+- Title: "NL Query"
+- Subtitle: "Ask in Korean"
+
+Card 5 (Green icon #10b981):
+- Icon: Layers
+- Title: "ETF/ETN"
+- Subtitle: "Derivative products"
+
+Card 6 (Rose icon #f43f5e):
+- Icon: Search
+- Title: "Visual Explorer"
+- Subtitle: "PyGWalker charts"
+
+Each card should have:
+- White background with subtle shadow
 - Rounded corners (16px)
-- Simple geometric icon (filled circle in the specified color)
-- Bold feature name
-- Lighter gray subtitle text
+- A colored circular icon at the top
+- Bold title text below the icon
+- Lighter gray subtitle
+- Professional, clean typography
 
-Style: Clean, modern card grid, minimal icons, professional SaaS marketing style. All text perfectly sharp and readable.
+Style: SaaS marketing page, modern card design, consistent spacing, Inter font family.
 
-Dimensions: 1200x700 pixels.
+Dimensions: 1200x600 pixels.
 """
 
 try:
