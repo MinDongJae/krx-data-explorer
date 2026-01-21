@@ -38,19 +38,22 @@ def save_image(response, output_path):
 # 1. 히어로 배너 (프로젝트 소개)
 print("1. Generating hero banner...")
 hero_prompt = """
-Create a modern, professional hero banner image for "KRX Data Explorer" project.
+Generate a 1920x1080 pixel professional banner image.
 
-Design requirements:
-- Clean, minimalist tech aesthetic with dark blue (#1a1a2e) to purple (#4a0080) gradient background
-- Centered title "KRX Data Explorer" in bold white sans-serif font (clearly readable)
-- Subtitle below: "한국거래소 데이터 탐색기" in smaller white text
-- Left side: Abstract stock chart visualization with glowing green/red candlesticks
-- Right side: Circular data visualization with interconnected nodes
-- Bottom: Subtle wave pattern representing data flow
-- Overall mood: Professional fintech, modern Korean tech aesthetic
-- Aspect ratio: 16:9 (1920x1080 style)
-- NO photographs of people, pure graphic design
-- Text must be CRISP and READABLE
+CRITICAL TEXT REQUIREMENTS:
+- Main title: "KRX Data Explorer" in 72pt bold Arial/Helvetica white font
+- Subtitle: "Korea Exchange Data Platform" in 36pt white font
+- ALL TEXT MUST BE PERFECTLY SHARP AND READABLE - no blur, no distortion
+- Use simple sans-serif fonts only
+
+DESIGN:
+- Background: solid dark blue (#0f172a) gradient to navy (#1e3a5a)
+- Left side: simple green candlestick chart icon (3-4 bars)
+- Right side: simple pie chart icon
+- Center: the text
+- Minimalist, clean, professional fintech style
+- NO Korean text (to avoid font rendering issues)
+- NO complex graphics, keep it simple and sharp
 """
 
 response = model.generate_content(hero_prompt)
@@ -59,32 +62,34 @@ save_image(response, OUTPUT_DIR / 'hero-banner.png')
 # 2. 시스템 아키텍처 다이어그램
 print("2. Generating architecture diagram...")
 arch_prompt = """
-Create a clean, modern system architecture diagram for a stock data application.
+Generate a 1200x800 pixel system architecture diagram.
 
-Layout (top to bottom, 3 layers):
-LAYER 1 - FRONTEND (light blue box):
-- Icons for: React, TypeScript, Vite, Tailwind CSS, GraphicWalker
-- Label: "Frontend - React + TypeScript"
+CRITICAL: ALL TEXT MUST BE PERFECTLY SHARP AND READABLE.
 
-LAYER 2 - BACKEND (dark blue box):
-- Icons for: FastAPI (Python), NLP Intent Classifier, Session Manager
-- Label: "Backend - FastAPI + PyKRX"
+LAYOUT (3 horizontal layers, top to bottom):
 
-LAYER 3 - DATA SOURCE (green box):
-- KRX Data Marketplace logo/icon
-- Data types: OHLCV, Market Cap, Investor Trading, ETF/ETN
+TOP LAYER - Blue box (#3b82f6):
+- Text: "FRONTEND" in bold 24pt white
+- Below: "React + TypeScript + Vite" in 16pt white
 
-Connections:
-- Arrow from Frontend to Backend labeled "REST API"
-- Arrow from Backend to KRX labeled "Web Scraping + API"
+MIDDLE LAYER - Dark blue box (#1e40af):
+- Text: "BACKEND" in bold 24pt white
+- Below: "FastAPI + PyKRX + NLP" in 16pt white
 
-Style:
-- White background with subtle grid pattern
-- Rounded rectangle boxes with shadows
-- Modern flat design icons
-- Clear Korean/English labels
-- Professional color scheme (blues, greens)
-- Size: 1200x800 pixels style
+BOTTOM LAYER - Green box (#10b981):
+- Text: "KRX DATA" in bold 24pt white
+- Below: "OHLCV, Market Cap, ETF" in 16pt white
+
+ARROWS:
+- Down arrow between each layer
+- Labels: "REST API" and "Web Scraping"
+
+STYLE:
+- Pure white background
+- Simple rounded rectangles with slight shadow
+- Use only Arial/Helvetica fonts
+- NO icons, text only
+- Clean, minimal, professional
 """
 
 response = model.generate_content(arch_prompt)
@@ -93,38 +98,37 @@ save_image(response, OUTPUT_DIR / 'architecture-diagram.png')
 # 3. 데이터 플로우 다이어그램
 print("3. Generating data flow diagram...")
 flow_prompt = """
-Create a horizontal data flow diagram showing natural language query processing.
+Generate a 1400x500 pixel horizontal flowchart.
 
-Flow (left to right):
-1. USER INPUT (blue circle):
-   - Korean text bubble: "삼성전자 PER 알려줘"
-   - Icon: person or chat bubble
+CRITICAL: ALL TEXT MUST BE PERFECTLY SHARP AND READABLE.
 
-2. NLP CLASSIFIER (purple hexagon):
-   - Label: "Intent Classifier"
-   - Sub-label: "의도 분류"
-   - Arrow showing transformation
+FLOW (left to right, 5 steps connected by arrows):
 
-3. API ROUTER (orange rectangle):
-   - Label: "API Router"
-   - Shows endpoint: "/api/fundamental"
-   - Parameters extracted
+STEP 1 - Blue circle:
+- Text: "USER QUERY" in 16pt bold
 
-4. DATA FETCH (green box):
-   - Label: "KRX Data"
-   - Shows data table icon
+STEP 2 - Purple rounded rectangle:
+- Text: "NLP CLASSIFIER" in 16pt bold
 
-5. RESPONSE (blue circle):
-   - Label: "JSON Response"
-   - Shows chart visualization
+STEP 3 - Orange rounded rectangle:
+- Text: "API ROUTER" in 16pt bold
 
-Style:
-- Clean white background
-- Colorful flat icons for each step
-- Curved arrows connecting each step
-- Korean labels with English subtitles
-- Modern, friendly design
-- Size: 1400x500 pixels style
+STEP 4 - Green rounded rectangle:
+- Text: "KRX DATA" in 16pt bold
+
+STEP 5 - Blue circle:
+- Text: "RESPONSE" in 16pt bold
+
+ARROWS:
+- Simple right-pointing arrows between each step
+- Arrow color: gray (#6b7280)
+
+STYLE:
+- Pure white background
+- Each shape has subtle drop shadow
+- Use only Arial/Helvetica fonts
+- NO icons, just colored shapes with text
+- Clean, professional diagram style
 """
 
 response = model.generate_content(flow_prompt)
@@ -133,36 +137,42 @@ save_image(response, OUTPUT_DIR / 'data-flow-diagram.png')
 # 4. UI 목업 / 대시보드 프리뷰
 print("4. Generating UI mockup...")
 ui_prompt = """
-Create a UI mockup of a stock data dashboard application.
+Generate a 1920x1080 pixel dashboard UI mockup screenshot.
 
-Dashboard layout:
-TOP BAR:
-- Logo "KRX Explorer" on left
-- Search bar in center with Korean placeholder "종목 검색..."
-- User menu on right
+CRITICAL: ALL TEXT MUST BE PERFECTLY SHARP AND READABLE.
 
-LEFT SIDEBAR:
-- Navigation menu items with icons:
-  - 대시보드 (Dashboard)
-  - OHLCV 조회
-  - 시가총액
-  - 투자자 동향
-  - 자연어 질의
+LAYOUT:
 
-MAIN CONTENT:
-- Header: "삼성전자 (005930)"
-- Price display: "71,200원" in large green text with "+2.3%"
-- Row of 4 stat cards: PER, PBR, 시가총액, 거래량
-- Below: Line chart showing stock price over time
-- Bottom: Data table with columns (날짜, 시가, 고가, 저가, 종가, 거래량)
+TOP BAR (dark gray #1f2937, 60px height):
+- Left: "KRX Explorer" logo text in white 20pt
+- Center: Search input box
+- Right: User icon
 
-Style:
-- Dark mode theme (dark gray #1f2937 background)
-- Accent colors: green for positive, red for negative
-- Clean modern UI like Bloomberg Terminal meets modern web
-- Korean labels throughout
-- Crisp typography
-- Size: 1920x1080 desktop style
+LEFT SIDEBAR (dark gray #111827, 200px width):
+- Menu items in white 14pt text:
+  - "Dashboard"
+  - "OHLCV Data"
+  - "Market Cap"
+  - "Investor Flow"
+  - "NL Query"
+
+MAIN CONTENT (gray #374151 background):
+- Header: "Samsung Electronics (005930)" in white 28pt
+- Large price: "71,200 KRW" in green (#10b981) 48pt
+- Below: "+2.3%" in green 24pt
+- 4 stat cards in a row (dark boxes with white text):
+  - "PER: 12.5"
+  - "PBR: 1.2"
+  - "Volume: 15M"
+  - "MCap: 450T"
+- Below: Simple line chart (green line on dark background)
+- Bottom: Data table with 5 rows
+
+STYLE:
+- Dark mode fintech dashboard
+- Use only Arial/Helvetica fonts
+- English text only (no Korean)
+- Clean, modern Bloomberg-style
 """
 
 response = model.generate_content(ui_prompt)
@@ -171,28 +181,38 @@ save_image(response, OUTPUT_DIR / 'ui-mockup.png')
 # 5. 기능 아이콘 그리드
 print("5. Generating features grid...")
 features_prompt = """
-Create a 2x3 grid of feature icons for a stock data application.
+Generate a 1200x800 pixel feature grid image.
 
-Grid items (each with icon + Korean label):
-1. 📊 OHLCV 데이터 - candlestick chart icon
-2. 💰 시가총액 - pie chart with coins
-3. 📈 투자자 동향 - bar chart with arrows
-4. 💬 자연어 질의 - chat bubble with Korean text
-5. 📋 ETF/ETN/ELW - stacked documents icon
-6. 🔍 실시간 검색 - magnifying glass with graph
+CRITICAL: ALL TEXT MUST BE PERFECTLY SHARP AND READABLE.
 
-Style:
-- Each item in a rounded card with subtle shadow
-- Consistent icon style (flat, colorful)
-- Light background (#f8fafc)
-- Blue accent color (#3b82f6)
-- Korean labels centered below each icon
-- Modern, clean aesthetic
-- Size: 1200x800 pixels
+LAYOUT: 2 rows x 3 columns grid of feature cards
+
+ROW 1:
+- Card 1: Blue icon, text "OHLCV Data" in 18pt bold
+- Card 2: Green icon, text "Market Cap" in 18pt bold
+- Card 3: Purple icon, text "Investor Flow" in 18pt bold
+
+ROW 2:
+- Card 4: Orange icon, text "NL Query" in 18pt bold
+- Card 5: Teal icon, text "ETF/ETN" in 18pt bold
+- Card 6: Red icon, text "Search" in 18pt bold
+
+EACH CARD:
+- White background with subtle shadow
+- Rounded corners (16px)
+- Simple geometric icon (circle, square, or triangle)
+- Text centered below icon
+
+STYLE:
+- Light gray background (#f1f5f9)
+- Equal spacing between cards
+- Use only Arial/Helvetica fonts
+- English text only
+- Minimal, modern design
 """
 
 response = model.generate_content(features_prompt)
 save_image(response, OUTPUT_DIR / 'features-grid.png')
 
-print("\n✅ All diagrams generated successfully!")
-print(f"   Output directory: {OUTPUT_DIR}")
+print("All diagrams generated!")
+print(f"Output: {OUTPUT_DIR}")
