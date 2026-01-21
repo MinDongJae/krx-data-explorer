@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
 KRX Data Explorer - 고품질 다이어그램 생성
-Gemini 2.5 Flash Image API 사용 (텍스트 렌더링 최적화)
+Gemini 3 Pro Image Preview API 사용 (최상급 텍스트 렌더링)
 
-실제 프로젝트 UI 반영:
-- PyGWalker (Graphic Walker) 기반 데이터 시각화
-- 바이올렛/오렌지 테마 (violet-50, amber-500)
-- AI 자연어 질의 기능
-- KRX 주식 데이터 실시간 분석
+- 텍스트 정확도: 94%+ (Gemini 2.5 Flash 대비 +27%)
+- 한국어 공식 지원 (ko-KR)
+- 4K 해상도 지원
+- "Thinking" 모드로 복잡한 다이어그램 추론
 
-참고: https://developers.googleblog.com/en/how-to-prompt-gemini-2-5-flash-image-generation-for-the-best-results/
+참고: https://deepmind.google/models/gemini-image/pro/
 """
 
 import google.generativeai as genai
@@ -17,11 +16,11 @@ import base64
 import os
 from pathlib import Path
 
-# Gemini API 설정 - 2.5 Flash Image (텍스트 렌더링 향상)
+# Gemini API 설정 - 3 Pro Image Preview (최상급 텍스트 렌더링)
 genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
 
 model = genai.GenerativeModel(
-    model_name='gemini-2.5-flash-image',
+    model_name='gemini-3-pro-image-preview',
     generation_config={
         'response_modalities': ['TEXT', 'IMAGE']
     }
