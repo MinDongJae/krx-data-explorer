@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 KRX Data Explorer - 고품질 다이어그램 생성
-Gemini 2.0 Flash Exp API 직접 호출
+Gemini 2.5 Flash API 사용 (텍스트 렌더링 최적화)
+
+참고: https://developers.googleblog.com/en/how-to-prompt-gemini-2-5-flash-image-generation-for-the-best-results/
 """
 
 import google.generativeai as genai
@@ -9,11 +11,11 @@ import base64
 import os
 from pathlib import Path
 
-# Gemini API 설정
+# Gemini API 설정 - 2.5 Flash로 업그레이드 (텍스트 렌더링 향상)
 genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
 
 model = genai.GenerativeModel(
-    model_name='gemini-2.0-flash-exp',
+    model_name='gemini-2.5-flash-image',  # 이미지 생성 전용 모델
     generation_config={
         'response_modalities': ['TEXT', 'IMAGE']
     }
@@ -31,188 +33,180 @@ def save_image(response, output_path):
                 img_data = base64.b64decode(img_data)
             with open(output_path, 'wb') as f:
                 f.write(img_data)
-            print(f"  Saved: {output_path} ({len(img_data):,} bytes)")
+            print(f"  [OK] Saved: {output_path} ({len(img_data):,} bytes)")
             return True
+    print(f"  [FAIL] No image in response for {output_path}")
     return False
 
-# 1. 히어로 배너 (프로젝트 소개)
+# ============================================================
+# 1. 히어로 배너 (프로젝트 소개) - Gemini로 생성
+# ============================================================
 print("1. Generating hero banner...")
 hero_prompt = """
-Generate a 1920x1080 pixel professional banner image.
+Create a professional, modern hero banner for a fintech data platform.
 
-CRITICAL TEXT REQUIREMENTS:
-- Main title: "KRX Data Explorer" in 72pt bold Arial/Helvetica white font
-- Subtitle: "Korea Exchange Data Platform" in 36pt white font
-- ALL TEXT MUST BE PERFECTLY SHARP AND READABLE - no blur, no distortion
-- Use simple sans-serif fonts only
+Scene description: A sleek, dark-themed financial dashboard interface floating in a deep navy blue digital space. The background has a subtle gradient from dark navy (#0a1628) to slightly lighter navy (#1a2744). Abstract geometric patterns of hexagons and circuit-like lines glow softly in electric blue (#3b82f6) in the background.
 
-DESIGN:
-- Background: solid dark blue (#0f172a) gradient to navy (#1e3a5a)
-- Left side: simple green candlestick chart icon (3-4 bars)
-- Right side: simple pie chart icon
-- Center: the text
-- Minimalist, clean, professional fintech style
-- NO Korean text (to avoid font rendering issues)
-- NO complex graphics, keep it simple and sharp
+In the center, display the title "KRX Data Explorer" in large, bold, clean white sans-serif typography (similar to Inter or SF Pro Display font). Below it, show the subtitle "Korea Exchange Stock Data Platform" in smaller, light gray text.
+
+On the left side, include a simplified green candlestick chart icon showing 4 bars going upward. On the right side, show a minimal pie chart icon in teal color.
+
+The overall style should be: minimalist, professional, fintech-inspired, with a Bloomberg Terminal or trading platform aesthetic. High contrast between text and background for maximum readability.
+
+Dimensions: 1920x600 pixels, landscape orientation.
 """
 
-response = model.generate_content(hero_prompt)
-save_image(response, OUTPUT_DIR / 'hero-banner.png')
+try:
+    response = model.generate_content(hero_prompt)
+    save_image(response, OUTPUT_DIR / 'hero-banner.png')
+except Exception as e:
+    print(f"  [ERROR] {e}")
 
-# 2. 시스템 아키텍처 다이어그램
+# ============================================================
+# 2. 시스템 아키텍처 다이어그램 - Gemini로 생성
+# ============================================================
 print("2. Generating architecture diagram...")
 arch_prompt = """
-Generate a 1200x800 pixel system architecture diagram.
+Create a clean, professional system architecture diagram with three horizontal layers.
 
-CRITICAL: ALL TEXT MUST BE PERFECTLY SHARP AND READABLE.
+Scene description: A vertical stack of three rounded rectangular boxes on a pure white background, connected by downward-pointing arrows.
 
-LAYOUT (3 horizontal layers, top to bottom):
+TOP BOX (Sky Blue #3b82f6):
+- Contains bold white text "FRONTEND"
+- Below it in smaller white text: "React + TypeScript + Vite"
+- The box has subtle rounded corners and a light shadow
 
-TOP LAYER - Blue box (#3b82f6):
-- Text: "FRONTEND" in bold 24pt white
-- Below: "React + TypeScript + Vite" in 16pt white
+MIDDLE BOX (Deep Blue #1e40af):
+- Contains bold white text "BACKEND"
+- Below it in smaller white text: "FastAPI + PyKRX + NLP"
+- Connected from top box with a dark gray arrow labeled "REST API"
 
-MIDDLE LAYER - Dark blue box (#1e40af):
-- Text: "BACKEND" in bold 24pt white
-- Below: "FastAPI + PyKRX + NLP" in 16pt white
+BOTTOM BOX (Emerald Green #10b981):
+- Contains bold white text "KRX DATA"
+- Below it in smaller white text: "OHLCV, Market Cap, ETF, Investor"
+- Connected from middle box with a dark gray arrow labeled "Web Scraping"
 
-BOTTOM LAYER - Green box (#10b981):
-- Text: "KRX DATA" in bold 24pt white
-- Below: "OHLCV, Market Cap, ETF" in 16pt white
+Style: Clean technical diagram, minimal design, sans-serif fonts only, high contrast text, professional documentation style. All text must be perfectly legible and sharp.
 
-ARROWS:
-- Down arrow between each layer
-- Labels: "REST API" and "Web Scraping"
-
-STYLE:
-- Pure white background
-- Simple rounded rectangles with slight shadow
-- Use only Arial/Helvetica fonts
-- NO icons, text only
-- Clean, minimal, professional
+Dimensions: 1200x800 pixels.
 """
 
-response = model.generate_content(arch_prompt)
-save_image(response, OUTPUT_DIR / 'architecture-diagram.png')
+try:
+    response = model.generate_content(arch_prompt)
+    save_image(response, OUTPUT_DIR / 'architecture-diagram.png')
+except Exception as e:
+    print(f"  [ERROR] {e}")
 
-# 3. 데이터 플로우 다이어그램
+# ============================================================
+# 3. 데이터 플로우 다이어그램 - Gemini로 생성
+# ============================================================
 print("3. Generating data flow diagram...")
 flow_prompt = """
-Generate a 1400x500 pixel horizontal flowchart.
+Create a horizontal flowchart showing data flow from left to right.
 
-CRITICAL: ALL TEXT MUST BE PERFECTLY SHARP AND READABLE.
+Scene description: Five connected shapes arranged horizontally on a clean white background, with gray arrows pointing right between each shape.
 
-FLOW (left to right, 5 steps connected by arrows):
+From left to right:
+1. BLUE CIRCLE - Contains text "User Query" in white
+2. PURPLE ROUNDED RECTANGLE - Contains text "NLP Classifier" in white
+3. ORANGE ROUNDED RECTANGLE - Contains text "API Router" in white
+4. GREEN ROUNDED RECTANGLE - Contains text "KRX Data" in white
+5. BLUE CIRCLE - Contains text "Response" in white
 
-STEP 1 - Blue circle:
-- Text: "USER QUERY" in 16pt bold
+Each shape has a subtle drop shadow. The arrows between shapes are gray (#6b7280) and have pointed tips.
 
-STEP 2 - Purple rounded rectangle:
-- Text: "NLP CLASSIFIER" in 16pt bold
+Style: Professional flowchart, clean lines, bold sans-serif text, high readability, technical documentation aesthetic.
 
-STEP 3 - Orange rounded rectangle:
-- Text: "API ROUTER" in 16pt bold
-
-STEP 4 - Green rounded rectangle:
-- Text: "KRX DATA" in 16pt bold
-
-STEP 5 - Blue circle:
-- Text: "RESPONSE" in 16pt bold
-
-ARROWS:
-- Simple right-pointing arrows between each step
-- Arrow color: gray (#6b7280)
-
-STYLE:
-- Pure white background
-- Each shape has subtle drop shadow
-- Use only Arial/Helvetica fonts
-- NO icons, just colored shapes with text
-- Clean, professional diagram style
+Dimensions: 1400x400 pixels, wide landscape format.
 """
 
-response = model.generate_content(flow_prompt)
-save_image(response, OUTPUT_DIR / 'data-flow-diagram.png')
+try:
+    response = model.generate_content(flow_prompt)
+    save_image(response, OUTPUT_DIR / 'data-flow-diagram.png')
+except Exception as e:
+    print(f"  [ERROR] {e}")
 
-# 4. UI 목업 / 대시보드 프리뷰
+# ============================================================
+# 4. UI 목업 - Gemini로 생성 (다크 대시보드)
+# ============================================================
 print("4. Generating UI mockup...")
 ui_prompt = """
-Generate a 1920x1080 pixel dashboard UI mockup screenshot.
+Create a dark-themed financial dashboard UI mockup, similar to Bloomberg Terminal or TradingView.
 
-CRITICAL: ALL TEXT MUST BE PERFECTLY SHARP AND READABLE.
+Scene description: A full dashboard interface with dark gray background (#111827).
 
-LAYOUT:
+TOP NAVIGATION BAR (darker gray #0f172a):
+- Left: Logo text "KRX Explorer" in white
+- Center: A search input field with placeholder text
+- Right: A simple user avatar circle
 
-TOP BAR (dark gray #1f2937, 60px height):
-- Left: "KRX Explorer" logo text in white 20pt
-- Center: Search input box
-- Right: User icon
+LEFT SIDEBAR (dark gray #1f2937, narrow):
+- Menu items in vertical list, white text:
+  "Dashboard" (highlighted with blue accent)
+  "OHLCV Data"
+  "Market Cap"
+  "Investors"
+  "ETF/ETN"
 
-LEFT SIDEBAR (dark gray #111827, 200px width):
-- Menu items in white 14pt text:
-  - "Dashboard"
-  - "OHLCV Data"
-  - "Market Cap"
-  - "Investor Flow"
-  - "NL Query"
+MAIN CONTENT AREA:
+- Header showing "Samsung Electronics" in large white text
+- Stock code "005930" in gray
+- Large green price "71,200" with up arrow and "+2.3%"
+- Below: Four metric cards in a row showing:
+  "PER 12.5" | "PBR 1.2" | "Volume 15M" | "MCap 450T"
+- Below cards: A simple green line chart on dark background
+- Bottom: A data table with 5 rows of stock data
 
-MAIN CONTENT (gray #374151 background):
-- Header: "Samsung Electronics (005930)" in white 28pt
-- Large price: "71,200 KRW" in green (#10b981) 48pt
-- Below: "+2.3%" in green 24pt
-- 4 stat cards in a row (dark boxes with white text):
-  - "PER: 12.5"
-  - "PBR: 1.2"
-  - "Volume: 15M"
-  - "MCap: 450T"
-- Below: Simple line chart (green line on dark background)
-- Bottom: Data table with 5 rows
+Style: Modern fintech dashboard, dark mode, clean typography, professional trading platform aesthetic. All text must be sharp and perfectly readable.
 
-STYLE:
-- Dark mode fintech dashboard
-- Use only Arial/Helvetica fonts
-- English text only (no Korean)
-- Clean, modern Bloomberg-style
+Dimensions: 1920x1080 pixels.
 """
 
-response = model.generate_content(ui_prompt)
-save_image(response, OUTPUT_DIR / 'ui-mockup.png')
+try:
+    response = model.generate_content(ui_prompt)
+    save_image(response, OUTPUT_DIR / 'ui-mockup.png')
+except Exception as e:
+    print(f"  [ERROR] {e}")
 
-# 5. 기능 아이콘 그리드
+# ============================================================
+# 5. 기능 그리드 - Gemini로 생성
+# ============================================================
 print("5. Generating features grid...")
 features_prompt = """
-Generate a 1200x800 pixel feature grid image.
+Create a feature showcase grid with 6 feature cards arranged in 2 rows of 3.
 
-CRITICAL: ALL TEXT MUST BE PERFECTLY SHARP AND READABLE.
+Scene description: Six white cards with rounded corners arranged in a grid pattern on a light gray (#f1f5f9) background.
 
-LAYOUT: 2 rows x 3 columns grid of feature cards
+ROW 1 (left to right):
+- Card 1: Blue circle icon, text "OHLCV Data" below, subtitle "Price & Volume"
+- Card 2: Green circle icon, text "Market Cap" below, subtitle "Company Size"
+- Card 3: Purple circle icon, text "Investor Flow" below, subtitle "Buy/Sell Trends"
 
-ROW 1:
-- Card 1: Blue icon, text "OHLCV Data" in 18pt bold
-- Card 2: Green icon, text "Market Cap" in 18pt bold
-- Card 3: Purple icon, text "Investor Flow" in 18pt bold
+ROW 2 (left to right):
+- Card 4: Orange circle icon, text "NL Query" below, subtitle "Ask in Korean"
+- Card 5: Teal circle icon, text "ETF/ETN" below, subtitle "Derivatives"
+- Card 6: Red circle icon, text "Search" below, subtitle "Find Stocks"
 
-ROW 2:
-- Card 4: Orange icon, text "NL Query" in 18pt bold
-- Card 5: Teal icon, text "ETF/ETN" in 18pt bold
-- Card 6: Red icon, text "Search" in 18pt bold
-
-EACH CARD:
-- White background with subtle shadow
+Each card has:
+- White background
+- Subtle shadow
 - Rounded corners (16px)
-- Simple geometric icon (circle, square, or triangle)
-- Text centered below icon
+- Simple geometric icon (filled circle in the specified color)
+- Bold feature name
+- Lighter gray subtitle text
 
-STYLE:
-- Light gray background (#f1f5f9)
-- Equal spacing between cards
-- Use only Arial/Helvetica fonts
-- English text only
-- Minimal, modern design
+Style: Clean, modern card grid, minimal icons, professional SaaS marketing style. All text perfectly sharp and readable.
+
+Dimensions: 1200x700 pixels.
 """
 
-response = model.generate_content(features_prompt)
-save_image(response, OUTPUT_DIR / 'features-grid.png')
+try:
+    response = model.generate_content(features_prompt)
+    save_image(response, OUTPUT_DIR / 'features-grid.png')
+except Exception as e:
+    print(f"  [ERROR] {e}")
 
+print("\n" + "="*60)
 print("All diagrams generated!")
-print(f"Output: {OUTPUT_DIR}")
+print(f"Output directory: {OUTPUT_DIR}")
+print("="*60)

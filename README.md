@@ -21,6 +21,22 @@
 
 > **"삼성전자 PER 알려줘"** 라고 입력하면, 자동으로 KRX에서 데이터를 가져와 보여줍니다.
 
+### 데이터 흐름
+
+```mermaid
+flowchart LR
+    A[👤 사용자 질문] --> B[🧠 NLP 분류기]
+    B --> C[🔀 API 라우터]
+    C --> D[📊 KRX 데이터]
+    D --> E[✅ 응답]
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#8b5cf6,color:#fff
+    style C fill:#f59e0b,color:#fff
+    style D fill:#10b981,color:#fff
+    style E fill:#3b82f6,color:#fff
+```
+
 ![Data Flow](docs/data-flow-diagram.png)
 
 ---
@@ -42,15 +58,40 @@
 
 ## 시스템 아키텍처
 
-![Architecture](docs/architecture-diagram.png)
+### 구조도 (Mermaid)
 
+```mermaid
+graph TB
+    subgraph Frontend["🖥️ Frontend"]
+        A[React 18]
+        B[TypeScript]
+        C[Vite]
+        D[Tailwind CSS]
+    end
+
+    subgraph Backend["⚙️ Backend"]
+        E[FastAPI]
+        F[PyKRX]
+        G[NLP Classifier]
+        H[Selenium]
+    end
+
+    subgraph Data["📊 KRX Data"]
+        I[OHLCV]
+        J[Market Cap]
+        K[ETF/ETN]
+        L[Investor Flow]
+    end
+
+    Frontend -->|REST API| Backend
+    Backend -->|Web Scraping| Data
+
+    style Frontend fill:#3b82f6,color:#fff
+    style Backend fill:#1e40af,color:#fff
+    style Data fill:#10b981,color:#fff
 ```
-Frontend (React + TypeScript)
-     ↓ REST API
-Backend (FastAPI + PyKRX)
-     ↓ Web Scraping
-KRX Data Marketplace
-```
+
+![Architecture](docs/architecture-diagram.png)
 
 ---
 
@@ -146,6 +187,31 @@ POST /api/intent/classify       # 의도 분류
 
 ## 프로젝트 구조
 
+```mermaid
+graph LR
+    subgraph Root["📁 krx-data-explorer"]
+        A["📁 frontend/"]
+        B["📁 backend/"]
+        C["📁 docs/"]
+        D["📄 README.md"]
+    end
+
+    subgraph FE["Frontend"]
+        A1["App.tsx"]
+        A2["components/ui/"]
+        A3["pages/"]
+    end
+
+    subgraph BE["Backend"]
+        B1["main.py"]
+        B2["intent_classifier.py"]
+        B3["krx_session.py"]
+    end
+
+    A --> FE
+    B --> BE
+```
+
 ```
 krx-data-explorer/
 ├── frontend/                 # React + TypeScript + Vite
@@ -211,7 +277,7 @@ MIT License
 
 <div align="center">
 
-Made with love for Korean Stock Market Data
+Made with ❤️ for Korean Stock Market Data
 
 **[MinDongJae](https://github.com/MinDongJae)**
 
