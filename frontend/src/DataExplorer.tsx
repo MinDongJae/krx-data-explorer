@@ -1,7 +1,7 @@
 // ============================================================================
-// 데이터 익스플로러 - PyGWalker (Graphic Walker) 기반 시각화
+// 데이터 익스플로러 - GraphicWalker 기반 시각화
 // No-code 드래그앤드롭 데이터 분석 도구
-// PyKRX API 연동으로 실시간 KRX 주식 데이터 제공
+// KRX Auth API 연동으로 실시간 주식 데이터 제공
 // ============================================================================
 
 import React, { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
@@ -95,22 +95,23 @@ interface DataField {
   analyticType: 'dimension' | 'measure';
 }
 
-interface PyKRXResponse {
+interface KRXApiResponse {
   date: string;
   count: number;
   data: Record<string, unknown>[];
   market?: string;
+  rows?: number;
 }
 
-type DataSourceType = 'sample' | 'pykrx' | 'uploaded';
+type DataSourceType = 'sample' | 'krx-api' | 'uploaded';
 type MarketType = 'ALL' | 'KOSPI' | 'KOSDAQ';
 type DataTypeOption = 'fundamental' | 'market-cap' | 'sector';
 
 // ============================================================================
-// PyKRX API 설정
+// KRX API 설정 — 배포 환경: 상대경로, 개발 환경: localhost
 // ============================================================================
 
-const PYKRX_API_URL = 'http://localhost:8000';
+const KRX_API_URL = import.meta.env.DEV ? 'http://localhost:8000' : '';
 
 // ============================================================================
 // 데이터 커버리지 명세 (API 테스트 결과 기반)
@@ -157,18 +158,20 @@ const DATA_COVERAGE: DataCoverageItem[] = [
   { category: '업종별 시세', description: '79개 업종별 등락현황', status: 'working', endpoint: '/api/naver/sector-list', note: '네이버 전용' },
   { category: '투자자 매매동향', description: '시장 전체 투자자별 매매', status: 'working', endpoint: '/api/naver/investor-trend', note: '장중 데이터' },
   { category: '자연어 질의', description: 'AI 기반 자연어 → API 변환', status: 'working', endpoint: '/api/natural-language' },
-  // ── KRX 로그인 필요 (data.krx.co.kr 인증 차단) ──
-  { category: '외국인 보유 현황', description: '외국인 한도 소진율', status: 'error', endpoint: '/api/stocks/foreign', note: 'KRX 로그인 필요' },
-  { category: '거래량/거래대금 추이', description: '종목별 거래량·대금 일별', status: 'error', endpoint: '/api/stocks/trading-volume', note: 'KRX 로그인 필요' },
-  { category: '순매수', description: '투자자별 순매수 금액/순위', status: 'error', endpoint: '/api/stocks/net-purchases', note: 'KRX 로그인 필요' },
-  { category: '공매도', description: '공매도 거래량/잔고/상위50', status: 'error', endpoint: '/api/short-selling/*', note: 'KRX 로그인 필요' },
-  { category: '채권 수익률', description: '국고채/회사채/CD 등', status: 'error', endpoint: '/api/bond/yields', note: 'KRX 로그인 필요' },
-  { category: '선물', description: '선물 목록/OHLCV', status: 'error', endpoint: '/api/futures/*', note: 'KRX 로그인 필요' },
-  { category: 'ETF/ETN/ELW 심화', description: 'KRX 전용 ETF 구성종목 등', status: 'error', endpoint: '/api/etf/holdings', note: 'KRX 로그인 필요' },
+  // ── KRX 로그인 인증 (krx_auth.py — ID/PW 직접 로그인) ──
+  { category: '전종목 시세', description: 'KOSPI/KOSDAQ 전종목 시세 (951개)', status: 'working', endpoint: '/api/krx-auth/all-stock-price', note: 'KRX 로그인' },
+  { category: '투자자별 매매', description: '기관/외국인/개인 순매수 기간조회', status: 'working', endpoint: '/api/krx-auth/investor-summary', note: 'KRX 로그인' },
+  { category: '공매도 전종목', description: '공매도 거래량/잔고 (951개)', status: 'working', endpoint: '/api/krx-auth/short-selling-all', note: 'KRX 로그인' },
+  { category: '채권 수익률', description: '국고채/회사채/CD 금리', status: 'working', endpoint: '/api/krx-auth/bond-yield', note: 'KRX 로그인' },
+  { category: '파생상품', description: '선물/옵션/미니 시세', status: 'working', endpoint: '/api/krx-auth/derivative-price', note: 'KRX 로그인' },
+  { category: 'ETF 전종목', description: 'ETF 시세 (1,075개)', status: 'working', endpoint: '/api/krx-auth/etf-price', note: 'KRX 로그인' },
+  { category: 'ETN 전종목', description: 'ETN 시세 (389개)', status: 'working', endpoint: '/api/krx-auth/etn-price', note: 'KRX 로그인' },
+  { category: 'ELW 전종목', description: 'ELW 시세 (2,964개)', status: 'working', endpoint: '/api/krx-auth/elw-price', note: 'KRX 로그인' },
+  { category: '금 시세', description: 'KRX 금시장 시세', status: 'working', endpoint: '/api/krx-auth/gold-price', note: 'KRX 로그인' },
 ];
 
 // ============================================================================
-// 샘플 데이터 (PyKRX 연결 실패 시 폴백)
+// 샘플 데이터 (API 미연결 시 기본 표시)
 // ============================================================================
 
 const krxSampleData = [
@@ -209,7 +212,7 @@ const sampleFields: DataField[] = [
   { fid: '배당수익률', name: '배당수익률(%)', semanticType: 'quantitative', analyticType: 'measure' },
 ];
 
-// PyKRX API 필드 정의
+// KRX API 필드 정의
 const pykrxFields: DataField[] = [
   { fid: '종목코드', name: '종목코드', semanticType: 'nominal', analyticType: 'dimension' },
   { fid: '종목명', name: '종목명', semanticType: 'nominal', analyticType: 'dimension' },
@@ -266,14 +269,14 @@ function parseCSV(csvText: string): { data: Record<string, unknown>[]; fields: D
 }
 
 // ============================================================================
-// PyKRX API 함수
+// KRX API 함수
 // ============================================================================
 
-async function checkPyKRXConnection(): Promise<boolean> {
+async function checkKRXConnection(): Promise<boolean> {
   try {
-    const response = await fetch(`${PYKRX_API_URL}/`, {
+    const response = await fetch(`${KRX_API_URL}/`, {
       method: 'GET',
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(5000)
     });
     return response.ok;
   } catch {
@@ -286,7 +289,7 @@ async function processNaturalLanguageQuery(
   query: string,
   execute: boolean = true
 ): Promise<NaturalLanguageResponse> {
-  const response = await fetch(`${PYKRX_API_URL}/api/natural-language`, {
+  const response = await fetch(`${KRX_API_URL}/api/natural-language`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, execute }),
@@ -294,17 +297,17 @@ async function processNaturalLanguageQuery(
   });
 
   if (!response.ok) {
-    throw new Error(`Natural Language API Error: ${response.status}`);
+    throw new Error(`API Error: ${response.status}`);
   }
 
   return response.json();
 }
 
-async function fetchPyKRXData(
+async function fetchKRXData(
   dataType: DataTypeOption,
   market: MarketType,
   topN: number = 50
-): Promise<PyKRXResponse> {
+): Promise<KRXApiResponse> {
   let endpoint = '';
   const params = new URLSearchParams();
 
@@ -326,12 +329,12 @@ async function fetchPyKRXData(
     params.set('market', market === 'ALL' ? 'KOSPI' : market);
   }
 
-  const response = await fetch(`${PYKRX_API_URL}${endpoint}?${params}`, {
+  const response = await fetch(`${KRX_API_URL}${endpoint}?${params}`, {
     signal: AbortSignal.timeout(30000)
   });
 
   if (!response.ok) {
-    throw new Error(`PyKRX API Error: ${response.status}`);
+    throw new Error(`KRX API Error: ${response.status}`);
   }
 
   return response.json();
@@ -350,8 +353,8 @@ const DataExplorer: React.FC = () => {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isCoverageOpen, setIsCoverageOpen] = useState(false);
 
-  // PyKRX 관련 상태
-  const [isPyKRXConnected, setIsPyKRXConnected] = useState<boolean | null>(null);
+  // API 연결 상태
+  const [isAPIConnected, setIsAPIConnected] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -367,11 +370,11 @@ const DataExplorer: React.FC = () => {
   const [topN, setTopN] = useState<number>(50);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  // PyKRX 연결 확인
+  // API 연결 확인
   useEffect(() => {
     const checkConnection = async () => {
-      const connected = await checkPyKRXConnection();
-      setIsPyKRXConnected(connected);
+      const connected = await checkKRXConnection();
+      setIsAPIConnected(connected);
     };
     checkConnection();
   }, []);
@@ -412,7 +415,7 @@ const DataExplorer: React.FC = () => {
 
         setData(resultData);
         setFields(dynamicFields);
-        setDataSource('pykrx');
+        setDataSource('krx-api');
         setLastUpdated(new Date().toLocaleDateString('ko-KR'));
       }
     } catch (error) {
@@ -431,24 +434,24 @@ const DataExplorer: React.FC = () => {
     }
   }, [handleNaturalLanguageQuery]);
 
-  // PyKRX 데이터 로드
-  const loadPyKRXData = useCallback(async () => {
+  // KRX 데이터 로드
+  const loadKRXData = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
 
     try {
-      const response = await fetchPyKRXData(selectedDataType, selectedMarket, topN);
+      const response = await fetchKRXData(selectedDataType, selectedMarket, topN);
 
       if (response.data && response.data.length > 0) {
         setData(response.data);
         setFields(pykrxFields);
-        setDataSource('pykrx');
+        setDataSource('krx-api');
         setLastUpdated(response.date);
       } else {
         throw new Error('데이터가 없습니다');
       }
     } catch (error) {
-      console.error('PyKRX 데이터 로드 실패:', error);
+      console.error('KRX 데이터 로드 실패:', error);
       setLoadError(error instanceof Error ? error.message : '데이터 로드 실패');
     } finally {
       setIsLoading(false);
@@ -495,7 +498,7 @@ const DataExplorer: React.FC = () => {
   // 데이터 소스 배지 색상
   const getDataSourceBadgeStyle = () => {
     switch (dataSource) {
-      case 'pykrx':
+      case 'krx-api':
         return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'uploaded':
         return 'bg-green-100 text-green-700 border-green-200';
@@ -506,8 +509,8 @@ const DataExplorer: React.FC = () => {
 
   const getDataSourceLabel = () => {
     switch (dataSource) {
-      case 'pykrx':
-        return `PyKRX 실시간 (${lastUpdated || '로딩중'})`;
+      case 'krx-api':
+        return `KRX 실시간 (${lastUpdated || '로딩중'})`;
       case 'uploaded':
         return fileName;
       default:
@@ -537,37 +540,35 @@ const DataExplorer: React.FC = () => {
                 <div>
                   <h1 className="text-lg font-bold text-gray-900">데이터 익스플로러</h1>
                   <p className="text-xs text-gray-500">
-                    네이버 금융 + PyKRX 실시간 시각화
+                    KRX 주식 데이터 실시간 시각화
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* 중앙: PyKRX 연결 상태 + 데이터 소스 + 커버리지 */}
+            {/* 중앙: API 연결 상태 + 데이터 소스 + 커버리지 */}
             <div className="flex items-center gap-3">
-              {/* PyKRX 연결 상태 */}
+              {/* API 연결 상태 */}
+              {isAPIConnected !== null && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
-                    isPyKRXConnected === null ? 'bg-gray-100 text-gray-500' :
-                    isPyKRXConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    isAPIConnected ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {isPyKRXConnected === null ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : isPyKRXConnected ? (
+                    {isAPIConnected ? (
                       <Wifi className="w-3 h-3" />
                     ) : (
-                      <WifiOff className="w-3 h-3" />
+                      <Database className="w-3 h-3" />
                     )}
-                    PyKRX
+                    {isAPIConnected ? 'API 연결됨' : '샘플 데이터'}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {isPyKRXConnected === null ? '연결 확인 중...' :
-                   isPyKRXConnected ? 'PyKRX API 연결됨 (localhost:8000)' :
-                   'PyKRX API 연결 안됨 - 샘플 데이터 사용'}
+                  {isAPIConnected ? 'KRX API 서버 연결됨' :
+                   '오프라인 모드 — 샘플 데이터로 시각화 체험 가능'}
                 </TooltipContent>
               </Tooltip>
+              )}
 
               {/* 데이터 커버리지 다이얼로그 */}
               <Dialog open={isCoverageOpen} onOpenChange={setIsCoverageOpen}>
@@ -588,7 +589,7 @@ const DataExplorer: React.FC = () => {
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <Database className="w-5 h-5 text-amber-600" />
-                      PyKRX 데이터 커버리지 명세
+                      KRX 데이터 커버리지 명세
                     </DialogTitle>
                     <DialogDescription>
                       현재 지원하는 API 엔드포인트와 상태입니다. (테스트 일시: {new Date().toLocaleDateString('ko-KR')})
@@ -678,8 +679,8 @@ const DataExplorer: React.FC = () => {
 
             {/* 오른쪽: 액션 버튼 */}
             <div className="flex items-center gap-2">
-              {/* PyKRX 데이터 로드 */}
-              {isPyKRXConnected && (
+              {/* KRX 데이터 로드 */}
+              {isAPIConnected && (
                 <div className="flex items-center gap-2 mr-2">
                   <Select value={selectedMarket} onValueChange={(v) => setSelectedMarket(v as MarketType)}>
                     <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -707,7 +708,7 @@ const DataExplorer: React.FC = () => {
                     variant="default"
                     size="sm"
                     className="gap-2 bg-blue-600 hover:bg-blue-700"
-                    onClick={loadPyKRXData}
+                    onClick={loadKRXData}
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -775,7 +776,7 @@ const DataExplorer: React.FC = () => {
                   <div className="max-w-xs space-y-2">
                     <p className="font-semibold">사용법</p>
                     <ul className="text-xs space-y-1">
-                      <li>• <strong>실시간 데이터</strong>: PyKRX에서 주식 데이터 로드</li>
+                      <li>• <strong>실시간 데이터</strong>: KRX에서 주식 데이터 로드</li>
                       <li>• 왼쪽 필드를 X/Y축으로 드래그</li>
                       <li>• 차트 타입 선택으로 시각화 변경</li>
                       <li>• 필터로 데이터 범위 조절</li>
@@ -790,7 +791,7 @@ const DataExplorer: React.FC = () => {
       </header>
 
       {/* 자연어 질의 섹션 */}
-      {isPyKRXConnected && (
+      {isAPIConnected && (
         <div className="max-w-[1920px] mx-auto px-6 py-4">
           <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl border border-violet-200/50 p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -1003,17 +1004,14 @@ const DataExplorer: React.FC = () => {
         </div>
       )}
 
-      {/* PyKRX 미연결 안내 */}
-      {isPyKRXConnected === false && (
+      {/* 오프라인 모드 안내 — 샘플 데이터 사용 중 */}
+      {isAPIConnected === false && (
         <div className="max-w-[1920px] mx-auto px-6 py-2">
-          <Alert>
-            <WifiOff className="h-4 w-4" />
-            <AlertTitle>PyKRX API 서버 연결 안됨</AlertTitle>
-            <AlertDescription>
-              실시간 데이터를 사용하려면 PyKRX 서버를 시작하세요:
-              <code className="ml-2 px-2 py-1 bg-gray-100 rounded text-sm">
-                cd backend-pykrx && python main.py
-              </code>
+          <Alert className="border-amber-200 bg-amber-50">
+            <Database className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">샘플 데이터 모드</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              KRX 샘플 데이터로 시각화 기능을 체험할 수 있습니다. CSV 파일을 업로드하여 직접 데이터를 분석할 수도 있습니다.
             </AlertDescription>
           </Alert>
         </div>
