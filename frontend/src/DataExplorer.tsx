@@ -70,22 +70,27 @@ import {
 // 타입 정의
 // ============================================================================
 
-// 자연어 질의 API 응답 타입
+// 자연어 질의 API 응답 타입 (온톨로지 기반 — LLM이 API+차트 자동 생성)
+interface NLChartConfig {
+  type: string;  // bar, line, scatter, area, pie
+  title: string;
+  x: string;
+  y: string;
+  sort?: string;
+  limit?: number;
+  color_field?: string;
+}
+
 interface NaturalLanguageResponse {
   query: string;
   intent: string;
-  confidence: number;
-  method: string;
-  endpoint: string;
-  parameters: Record<string, unknown>;
+  chart: NLChartConfig;
+  data: Record<string, unknown>[];
+  columns: string[];
+  rows: number;
   latency_ms: number;
-  executed?: boolean;
-  result?: {
-    success: boolean;
-    data?: Record<string, unknown>[];
-    error?: string;
-    count?: number;
-  };
+  model: string;
+  endpoints_called: string[];
 }
 
 interface DataField {
@@ -286,16 +291,14 @@ async function checkKRXConnection(): Promise<boolean> {
   }
 }
 
-// 자연어 질의 API 호출 (TODO: Lambda에 NL 라우트 추가 시 활성화)
+// 자연어 질의 API 호출 (온톨로지 기반 — Gemini Flash가 API+차트 자동 생성)
+// GET 방식 (CloudFront OAC + AWS_IAM 호환 — POST body 서명 문제 우회)
 async function processNaturalLanguageQuery(
   query: string,
-  execute: boolean = true
 ): Promise<NaturalLanguageResponse> {
-  const response = await fetch(`${KRX_API_URL}/api/natural-language`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, execute }),
-    signal: AbortSignal.timeout(30000)
+  const params = new URLSearchParams({ q: query });
+  const response = await fetch(`${DATA_EXPLORE_API}/nl-query?${params}`, {
+    signal: AbortSignal.timeout(60000)
   });
 
   if (!response.ok) {
@@ -375,7 +378,7 @@ const DataExplorer: React.FC = () => {
     checkConnection();
   }, []);
 
-  // 자연어 질의 처리
+  // 자연어 질의 처리 (온톨로지 기반 — LLM이 API 선택 + 차트 설정 자동 생성)
   const handleNaturalLanguageQuery = useCallback(async () => {
     if (!nlQuery.trim() || nlLoading) return;
 
@@ -384,22 +387,20 @@ const DataExplorer: React.FC = () => {
     setNlResult(null);
 
     try {
-      const result = await processNaturalLanguageQuery(nlQuery.trim(), true);
+      const result = await processNaturalLanguageQuery(nlQuery.trim());
       setNlResult(result);
 
       // 히스토리에 추가 (최대 10개)
       setNlHistory(prev => [result, ...prev.slice(0, 9)]);
 
-      // 실행 결과가 데이터 배열이면 GraphicWalker에 로드
-      if (result.executed && result.result?.success && result.result.data && result.result.data.length > 0) {
-        const resultData = result.result.data;
-
+      // 결과 데이터가 있으면 GraphicWalker에 로드
+      if (result.data && result.data.length > 0) {
         // 동적으로 필드 생성
-        const sampleRow = resultData[0];
+        const sampleRow = result.data[0];
         const dynamicFields: DataField[] = Object.keys(sampleRow).map(key => {
           const value = sampleRow[key];
           const isNumber = typeof value === 'number';
-          const isDate = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value);
+          const isDate = typeof value === 'string' && /^\d{4}[-\/]\d{2}[-\/]\d{2}/.test(value);
 
           return {
             fid: key,
@@ -409,7 +410,7 @@ const DataExplorer: React.FC = () => {
           };
         });
 
-        setData(resultData);
+        setData(result.data);
         setFields(dynamicFields);
         setDataSource('krx-api');
         setLastUpdated(new Date().toLocaleDateString('ko-KR'));
@@ -986,7 +987,7 @@ const DataExplorer: React.FC = () => {
               <Sparkles className="w-5 h-5 text-violet-600" />
               <h2 className="text-sm font-semibold text-violet-900">AI 자연어 질의</h2>
               <Badge variant="outline" className="text-xs bg-violet-100 text-violet-700 border-violet-300">
-                Hybrid Intent Classification
+                온톨로지 기반 · Gemini Flash
               </Badge>
             </div>
 
@@ -1023,106 +1024,103 @@ const DataExplorer: React.FC = () => {
               </Alert>
             )}
 
-            {/* 결과 표시 */}
+            {/* 결과 표시 (온톨로지 기반 — AI가 자동 생성한 차트 설정 포함) */}
             {nlResult && (
               <div className="mt-3 p-3 bg-white rounded-lg border border-violet-100">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Badge className={`text-xs ${
-                      nlResult.confidence >= 0.8 ? 'bg-green-100 text-green-700' :
-                      nlResult.confidence >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
+                    <Badge className="text-xs bg-violet-100 text-violet-700">
                       {nlResult.intent}
                     </Badge>
-                    <span className="text-xs text-gray-500">
-                      신뢰도: {(nlResult.confidence * 100).toFixed(1)}%
-                    </span>
-                    <span className="text-xs text-gray-400">|</span>
-                    <span className="text-xs text-gray-500">
-                      방법: {nlResult.method}
-                    </span>
-                    <span className="text-xs text-gray-400">|</span>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {nlResult.latency_ms.toFixed(0)}ms
+                      {nlResult.latency_ms}ms
+                    </span>
+                    <span className="text-xs text-gray-400">|</span>
+                    <span className="text-xs text-gray-500">
+                      {nlResult.model}
                     </span>
                   </div>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                    {nlResult.endpoint}
-                  </code>
+                  <div className="flex items-center gap-1">
+                    {nlResult.endpoints_called.map(ep => (
+                      <code key={ep} className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                        {ep}
+                      </code>
+                    ))}
+                  </div>
                 </div>
 
-                {nlResult.executed && nlResult.result && (
+                {nlResult.data && nlResult.data.length > 0 ? (
                   <div className="text-sm">
-                    {nlResult.result.success ? (
-                      <>
-                        <span className="text-green-600">
-                          {nlResult.result.count ?? nlResult.result.data?.length ?? 0}개 결과 로드됨
-                        </span>
-                        {/* 데이터 미리보기 테이블 */}
-                        {nlResult.result.data && nlResult.result.data.length > 0 && (
-                          <div className="mt-3 max-h-48 overflow-auto rounded border border-gray-200">
-                            <table className="min-w-full text-xs">
-                              <thead className="bg-gray-50 sticky top-0">
-                                <tr>
-                                  {Object.keys(nlResult.result.data[0]).map((key) => (
-                                    <th key={key} className="px-2 py-1 text-left font-medium text-gray-600 border-b">
-                                      {key}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {nlResult.result.data.slice(0, 10).map((row, rowIdx) => (
-                                  <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                    {Object.values(row).map((val, colIdx) => (
-                                      <td key={colIdx} className="px-2 py-1 border-b border-gray-100 whitespace-nowrap">
-                                        {typeof val === 'number'
-                                          ? val.toLocaleString('ko-KR', { maximumFractionDigits: 2 })
-                                          : String(val)}
-                                      </td>
-                                    ))}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                            {nlResult.result.data.length > 10 && (
-                              <div className="text-center py-1 text-gray-400 text-xs bg-gray-50">
-                                ... 외 {nlResult.result.data.length - 10}개 더
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {/* 시각화 도움말 */}
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                          <div className="text-xs text-blue-700 font-medium mb-2">
-                            💡 시각화가 필요하신가요?
-                          </div>
-                          <div className="text-xs text-blue-600 space-y-1">
-                            <p>아래 GraphicWalker에서 필드를 드래그하여 차트를 만들 수 있습니다:</p>
-                            <ul className="list-disc list-inside ml-2 text-blue-500">
-                              <li>좌측 필드 목록에서 원하는 필드를 X축/Y축으로 드래그</li>
-                              <li>차트 유형 선택 (막대, 선, 원형 등)</li>
-                            </ul>
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {['종목명', '종가', '거래량', '등락률'].filter(f =>
-                              nlResult.result?.data?.[0] && Object.keys(nlResult.result.data[0]).includes(f)
-                            ).map(field => (
-                              <span key={field} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
-                                {field}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-red-600">
-                        실행 실패: {nlResult.result.error}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-green-600 font-medium">
+                        {nlResult.rows}개 결과 로드됨
                       </span>
+                      {nlResult.chart?.title && (
+                        <>
+                          <span className="text-gray-400">|</span>
+                          <span className="text-violet-600 text-xs">
+                            AI 추천 차트: {nlResult.chart.title} ({nlResult.chart.type})
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* AI 차트 설정 안내 */}
+                    {nlResult.chart && (
+                      <div className="p-2 bg-violet-50 rounded-lg border border-violet-100 mb-2">
+                        <div className="text-xs text-violet-700">
+                          <span className="font-medium">AI 자동 설정:</span>{' '}
+                          X축={nlResult.chart.x}, Y축={nlResult.chart.y}
+                          {nlResult.chart.sort && nlResult.chart.sort !== 'none' && `, 정렬=${nlResult.chart.sort === 'desc' ? '내림차순' : '오름차순'}`}
+                          {nlResult.chart.limit && `, 상위 ${nlResult.chart.limit}개`}
+                          {nlResult.chart.color_field && `, 색상=${nlResult.chart.color_field}`}
+                        </div>
+                      </div>
                     )}
+
+                    {/* 데이터 미리보기 테이블 */}
+                    <div className="max-h-48 overflow-auto rounded border border-gray-200">
+                      <table className="min-w-full text-xs">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            {Object.keys(nlResult.data[0]).slice(0, 8).map((key) => (
+                              <th key={key} className="px-2 py-1 text-left font-medium text-gray-600 border-b">
+                                {key}
+                              </th>
+                            ))}
+                            {Object.keys(nlResult.data[0]).length > 8 && (
+                              <th className="px-2 py-1 text-left font-medium text-gray-400 border-b">
+                                +{Object.keys(nlResult.data[0]).length - 8}
+                              </th>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {nlResult.data.slice(0, 5).map((row, rowIdx) => (
+                            <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              {Object.values(row).slice(0, 8).map((val, colIdx) => (
+                                <td key={colIdx} className="px-2 py-1 border-b border-gray-100 whitespace-nowrap">
+                                  {typeof val === 'number'
+                                    ? val.toLocaleString('ko-KR', { maximumFractionDigits: 2 })
+                                    : String(val)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {nlResult.data.length > 5 && (
+                        <div className="text-center py-1 text-gray-400 text-xs bg-gray-50">
+                          ... 외 {nlResult.data.length - 5}개 (아래 GraphicWalker에서 시각화)
+                        </div>
+                      )}
+                    </div>
                   </div>
+                ) : (
+                  <span className="text-amber-600 text-sm">
+                    데이터 없음 — 질의를 다시 시도해주세요
+                  </span>
                 )}
               </div>
             )}
@@ -1149,7 +1147,8 @@ const DataExplorer: React.FC = () => {
                           <Badge variant="outline" className="text-xs">
                             {item.intent}
                           </Badge>
-                          <span className="text-gray-400">{item.latency_ms.toFixed(0)}ms</span>
+                          <span className="text-gray-400">{item.rows}행</span>
+                          <span className="text-gray-400">{item.latency_ms}ms</span>
                         </div>
                       </div>
                     </button>
@@ -1162,11 +1161,12 @@ const DataExplorer: React.FC = () => {
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="text-xs text-gray-500">예시:</span>
               {[
-                '삼성전자 주가',
-                '코스피 시가총액 상위 10개',
-                'ETF 목록',
-                'SK하이닉스 외국인 보유율',
-                '코스닥150 지수',
+                '코스피 시가총액 상위 20개 막대차트',
+                '외국인 순매수 상위 종목',
+                '업종별 등락률',
+                'ETF 전종목 시세',
+                '국고채 수익률',
+                '공매도 상위 50 종목',
               ].map((example) => (
                 <button
                   key={example}
