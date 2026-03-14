@@ -2,233 +2,128 @@
 
 <div align="center">
 
-![Hero Banner](docs/hero-banner.png)
-
-**한국거래소(KRX) 주식 데이터를 자연어로 조회하고 시각화하는 오픈소스 플랫폼**
+**한국거래소(KRX) 시장 데이터 — REST API + MCP 서버**
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![MCP](https://img.shields.io/badge/MCP-FastMCP_2.0-8b5cf6?style=for-the-badge)](https://gofastmcp.com)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
-
-[시작하기](#-빠른-시작) | [API 문서](#-api-엔드포인트) | [기능 소개](#-주요-기능)
 
 </div>
 
 ---
 
-## 한눈에 보기
+## 개요
 
-> **"삼성전자 PER 알려줘"** 라고 입력하면, 자동으로 KRX에서 데이터를 가져와 보여줍니다.
+KRX(data.krx.co.kr)에 ID/PW로 직접 로그인하여 **31개 데이터 엔드포인트**를 제공합니다.
 
-### 데이터 흐름
+- **REST API**: FastAPI 기반 119개 라우트
+- **MCP 서버**: AI가 직접 호출 가능한 35개 도구 (Claude Desktop, Cursor 등)
+- **프론트엔드**: React + TypeScript 데이터 시각화
 
-```mermaid
-flowchart LR
-    A[👤 사용자 질문] --> B[🧠 NLP 분류기]
-    B --> C[🔀 API 라우터]
-    C --> D[📊 KRX 데이터]
-    D --> E[✅ 응답]
+### 데이터 범위
 
-    style A fill:#3b82f6,color:#fff
-    style B fill:#8b5cf6,color:#fff
-    style C fill:#f59e0b,color:#fff
-    style D fill:#10b981,color:#fff
-    style E fill:#3b82f6,color:#fff
-```
-
-![Data Flow](docs/data-flow-diagram.png)
-
----
-
-## 주요 기능
-
-![Features](docs/features-grid.png)
-
-| 기능 | 설명 |
-|------|------|
-| **OHLCV 데이터** | 시가, 고가, 저가, 종가, 거래량 조회 |
-| **시가총액** | 종목별 시가총액 및 상장주식수 |
-| **투자자 동향** | 기관, 외국인, 개인 순매수 현황 |
-| **자연어 질의** | 한국어로 질문하면 자동으로 API 호출 |
-| **ETF/ETN/ELW** | 파생상품 데이터 조회 |
-| **시각화** | GraphicWalker 기반 무코드 데이터 시각화 |
-
----
-
-## 시스템 아키텍처
-
-### 구조도 (Mermaid)
-
-```mermaid
-graph TB
-    subgraph Frontend["🖥️ Frontend"]
-        A[React 18]
-        B[TypeScript]
-        C[Vite]
-        D[Tailwind CSS]
-    end
-
-    subgraph Backend["⚙️ Backend"]
-        E[FastAPI]
-        F[PyKRX]
-        G[NLP Classifier]
-        H[Selenium]
-    end
-
-    subgraph Data["📊 KRX Data"]
-        I[OHLCV]
-        J[Market Cap]
-        K[ETF/ETN]
-        L[Investor Flow]
-    end
-
-    Frontend -->|REST API| Backend
-    Backend -->|Web Scraping| Data
-
-    style Frontend fill:#3b82f6,color:#fff
-    style Backend fill:#1e40af,color:#fff
-    style Data fill:#10b981,color:#fff
-```
-
-![Architecture](docs/architecture-diagram.png)
-
----
-
-## UI 미리보기
-
-![UI Mockup](docs/ui-mockup.png)
+| 카테고리 | 엔드포인트 | 데이터 |
+|----------|-----------|--------|
+| 주식 시세 | all_stock_price, stock_daily, market_cap, market_trading | KOSPI/KOSDAQ 전종목 |
+| 외국인/PER | foreign_holding, foreign_exhaustion | PER/PBR/EPS/배당수익률 |
+| 업종/지수 | sector_price, index_price, index_trend | KOSPI/KOSDAQ 51개 지수 |
+| 투자자 | investor_summary, investor_trend, investor_daily, investor_by_stock, investor_top_net_buying | 13개 투자자 유형별 |
+| 프로그램 | program_trading, program_daily | 차익/비차익 매매 |
+| ETF/ETN/ELW | etf_price, etn_price, elw_price | 1,075 / 389 / 2,964개 |
+| 공매도 | short_selling_all, short_selling_stock, short_selling_stock_daily, short_selling_investor, short_selling_top50, short_selling_balance | 전종목 + 상위50 + 잔고 |
+| 파생상품 | derivative_price | 선물/옵션/미니/달러 |
+| 채권 | bond_price, bond_yield, bond_yield_trend | 국채/회사채/CD |
+| 기타 | dividend, issued_securities, gold_price | 배당/발행증권/금 |
 
 ---
 
 ## 빠른 시작
 
-### 사전 요구사항
-
-- **Python** 3.10+
-- **Node.js** 18+
-- **Chrome** (KRX 로그인용)
-
-### 1. 백엔드 설정
+### 백엔드 (REST API)
 
 ```bash
 cd backend
-
-# 가상환경 생성
-python -m venv venv
-.\venv\Scripts\activate  # Windows
-# source venv/bin/activate  # macOS/Linux
-
-# 의존성 설치
 pip install -r requirements.txt
 
-# 환경변수 설정
-echo KRX_USER_ID=your_id > .env
-echo KRX_PASSWORD=your_password >> .env
+# 환경변수 (선택 — 기본값 있음)
+export KRX_ID=your_id
+export KRX_PW=your_password
 
 # 서버 실행
 uvicorn main:app --reload --port 8000
 ```
 
-### 2. 프론트엔드 설정
+API 문서: http://localhost:8000/docs
+
+### MCP 서버 (AI 도구)
+
+```bash
+cd backend
+
+# stdio 모드 (Claude Desktop)
+python krx_mcp.py
+
+# SSE 모드 (웹 클라이언트)
+python krx_mcp.py --transport sse
+```
+
+**Claude Desktop 설정** (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "krx-data": {
+      "command": "python",
+      "args": ["path/to/backend/krx_mcp.py"]
+    }
+  }
+}
+```
+
+### 프론트엔드
 
 ```bash
 cd frontend
-
 npm install
 npm run dev
 ```
 
-### 3. 접속
-
-| 서비스 | URL |
-|--------|-----|
-| 프론트엔드 | http://localhost:5173 |
-| 백엔드 API | http://localhost:8000 |
-| Swagger 문서 | http://localhost:8000/docs |
+http://localhost:5173
 
 ---
 
-## API 엔드포인트
-
-### 기본 데이터
-
-```bash
-GET /api/ohlcv/{date}           # 특정 일자 OHLCV
-GET /api/ohlcv/range/{ticker}   # 기간별 OHLCV
-GET /api/market-cap/{date}      # 시가총액
-GET /api/fundamental/{date}     # PER/PBR/배당수익률
-```
-
-### 투자자 동향
-
-```bash
-GET /api/investor/{date}        # 투자자별 매매동향
-GET /api/net-purchases/{start}/{end}  # 순매수 상위 종목
-GET /api/foreign-holding/{date} # 외국인 보유현황
-```
-
-### 파생상품
-
-```bash
-GET /api/etf/list               # ETF 목록
-GET /api/etn/list               # ETN 목록
-GET /api/elw/list               # ELW 목록
-```
-
-### 자연어 질의
-
-```bash
-POST /api/nl/query              # 자연어 질의 처리
-POST /api/intent/classify       # 의도 분류
-```
-
----
-
-## 프로젝트 구조
-
-```mermaid
-graph LR
-    subgraph Root["📁 krx-data-explorer"]
-        A["📁 frontend/"]
-        B["📁 backend/"]
-        C["📁 docs/"]
-        D["📄 README.md"]
-    end
-
-    subgraph FE["Frontend"]
-        A1["App.tsx"]
-        A2["components/ui/"]
-        A3["pages/"]
-    end
-
-    subgraph BE["Backend"]
-        B1["main.py"]
-        B2["intent_classifier.py"]
-        B3["krx_session.py"]
-    end
-
-    A --> FE
-    B --> BE
-```
+## 아키텍처
 
 ```
 krx-data-explorer/
-├── frontend/                 # React + TypeScript + Vite
-│   ├── src/
-│   │   ├── App.tsx           # 메인 애플리케이션
-│   │   ├── components/ui/    # shadcn/ui 컴포넌트
-│   │   └── pages/            # 페이지 컴포넌트
-│   └── package.json
-│
-├── backend/                  # FastAPI + Python
-│   ├── main.py               # FastAPI 앱 (40+ 엔드포인트)
-│   ├── intent_classifier.py  # 자연어 의도 분류기
-│   ├── krx_session.py        # KRX 세션 관리
+├── backend/
+│   ├── krx_auth.py          # KRX ID/PW 로그인 + 세션 관리 (핵심)
+│   ├── krx_mcp.py           # MCP 서버 (35개 도구)
+│   ├── krx_direct.py        # outerLoader 우회 방식 (폴백)
+│   ├── main.py              # FastAPI 앱 (119 라우트)
+│   ├── naver_finance.py     # 네이버 금융 데이터 (폴백)
+│   ├── proxy_rotator.py     # 프록시 로테이션
 │   └── requirements.txt
 │
-├── docs/                     # 다이어그램
-└── README.md
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── DataExplorer.tsx  # 메인 데이터 탐색 UI
+│   │   └── components/ui/   # shadcn/ui
+│   └── package.json
+│
+└── docs/                    # 다이어그램
+```
+
+### 데이터 수집 우선순위
+
+```
+KRX ID/PW 로그인 (krx_auth.py)
+    ↓ 실패시
+outerLoader 우회 (krx_direct.py)
+    ↓ 실패시
+네이버 금융 (naver_finance.py)
 ```
 
 ---
@@ -237,48 +132,13 @@ krx-data-explorer/
 
 | 구분 | 기술 |
 |------|------|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, GraphicWalker |
-| **Backend** | FastAPI, Python 3.10+, PyKRX, Selenium, Pandas |
-| **Data Source** | KRX Data Marketplace |
-
----
-
-## 주의사항
-
-### PyKRX Windows 인코딩 이슈
-
-PyKRX는 Windows에서 한글 인코딩 문제가 있습니다. 이 프로젝트에서는:
-
-1. **쿠키 주입**: pykrx import 전에 KRX 세션 쿠키 주입
-2. **직접 API 호출**: 인코딩 문제가 심한 경우 KRX API 직접 호출
-3. **영문 컬럼명**: 한글 컬럼명 대신 영문 사용
-
-### KRX 로그인
-
-- KRX Data Marketplace 계정이 필요합니다
-- 일부 데이터는 로그인 없이도 조회 가능
-- 세션은 자동으로 유지되며 쿠키가 저장됩니다
+| Backend | FastAPI, requests, pandas |
+| MCP | FastMCP 2.x |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui |
+| Data | KRX data.krx.co.kr (ID/PW 로그인) |
 
 ---
 
 ## 라이선스
 
 MIT License
-
----
-
-## 감사의 말
-
-- [PyKRX](https://github.com/sharebook-kr/pykrx) - KRX 데이터 수집 라이브러리
-- [Graphic Walker](https://github.com/Kanaries/graphic-walker) - 데이터 시각화
-- [shadcn/ui](https://ui.shadcn.com/) - UI 컴포넌트
-
----
-
-<div align="center">
-
-Made with ❤️ for Korean Stock Market Data
-
-**[MinDongJae](https://github.com/MinDongJae)**
-
-</div>

@@ -1,31 +1,316 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
+/* Pretendard - 한글 웹폰트 (Hex.tech 스타일) */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --radius: 0.5rem;
-}
+/* Professional KRX Design System - Enterprise Grade */
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  :root {
+    /* KRX Professional Color Palette */
+    --background: 0 0% 99%; /* Pure white background */
+    --foreground: 214 17% 22%; /* Soft dark #32383e */
+
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 214 17% 22%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 20% 15%;
+
+    /* KRX Brand Colors - Purple/Violet Theme */
+    --primary: 262 83% 58%; /* #8b5cf6 - Violet Primary */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 262 83% 48%;
+    --primary-light: 270 76% 70%; /* #a78bfa - Light Violet */
+    --primary-accent: 270 50% 98%; /* Light violet accent */
+
+    --secondary: 210 15% 97%; /* Subtle off-white */
+    --secondary-foreground: 210 20% 25%;
+
+    --muted: 210 12% 96%; /* Very light gray */
+    --muted-foreground: 210 12% 45%;
+
+    --accent: 270 30% 94%; /* Light violet accent */
+    --accent-foreground: 262 83% 40%;
+
+    /* Status Colors - Professional */
+    --destructive: 0 72% 51%; /* Professional red */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 69% 40%; /* Professional green */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 85% 55%; /* Professional amber */
+    --warning-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 210 15% 88%; /* Subtle borders */
+    --input: 210 12% 96%; /* Light input background */
+    --ring: 262 83% 58%; /* Focus ring matches primary violet */
+
+    --radius: 8px; /* Subtle rounded corners */
+
+    /* Professional Shadows & Effects */
+    --shadow-sm: 0 1px 2px 0 hsl(210 20% 15% / 0.05);
+    --shadow-md: 0 4px 8px -2px hsl(210 20% 15% / 0.1), 0 2px 4px -2px hsl(210 20% 15% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(210 20% 15% / 0.12), 0 4px 6px -2px hsl(210 20% 15% / 0.05);
+    --shadow-xl: 0 20px 25px -5px hsl(210 20% 15% / 0.15), 0 10px 10px -5px hsl(210 20% 15% / 0.04);
+    
+    /* KRX Professional Gradients - Violet Theme */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(270 76% 70%));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(270 20% 98%));
+    
+    /* Professional Transitions */
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Sidebar Colors - Violet Theme */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 20% 15%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 20% 96%;
+    --sidebar-accent-foreground: 262 60% 35%;
+    --sidebar-border: 270 15% 88%;
+    --sidebar-ring: 262 83% 58%;
+  }
+
+  .dark {
+    /* Dark Mode - Professional */
+    --background: 210 25% 6%; /* Deep dark blue-gray */
+    --foreground: 210 12% 92%; /* Light gray text */
+
+    --card: 210 25% 8%; /* Slightly lighter cards */
+    --card-foreground: 210 12% 90%;
+
+    --popover: 210 25% 8%;
+    --popover-foreground: 210 12% 90%;
+
+    --primary: 262 83% 68%; /* Lighter violet for dark mode */
+    --primary-foreground: 260 25% 6%;
+    --primary-hover: 262 83% 75%;
+    --primary-light: 270 76% 25%;
+
+    --secondary: 210 20% 12%; /* Dark secondary */
+    --secondary-foreground: 210 12% 85%;
+
+    --muted: 210 20% 10%; /* Very dark muted */
+    --muted-foreground: 210 10% 60%;
+
+    --accent: 210 20% 12%; /* Dark accent */
+    --accent-foreground: 210 12% 85%;
+
+    --destructive: 0 65% 55%; /* Slightly muted red */
+    --destructive-foreground: 210 12% 90%;
+
+    --success: 142 60% 50%; /* Slightly brighter green */
+    --success-foreground: 210 12% 90%;
+
+    --warning: 35 75% 60%; /* Slightly muted amber */
+    --warning-foreground: 210 12% 90%;
+
+    --border: 210 20% 15%; /* Dark borders */
+    --input: 210 20% 12%; /* Dark input background */
+    --ring: 262 83% 68%; /* Focus ring violet */
+
+    /* Dark Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 4px 8px -2px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.15);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.5), 0 10px 10px -5px hsl(0 0% 0% / 0.25);
+
+    /* Dark Gradients - Violet */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(270 76% 75%));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(260 25% 10%));
+
+    /* Dark Sidebar - Violet */
+    --sidebar-background: 260 25% 4%;
+    --sidebar-foreground: 210 12% 90%;
+    --sidebar-primary: 262 83% 68%;
+    --sidebar-primary-foreground: 260 25% 6%;
+    --sidebar-accent: 260 20% 8%;
+    --sidebar-accent-foreground: 270 40% 85%;
+    --sidebar-border: 260 20% 12%;
+    --sidebar-ring: 262 83% 68%;
+  }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-variation-settings: normal;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+  }
+
+  /* Professional Typography Scale */
+  h1 { @apply text-4xl font-bold tracking-tight leading-tight; }
+  h2 { @apply text-3xl font-semibold tracking-tight leading-tight; }
+  h3 { @apply text-2xl font-semibold tracking-tight; }
+  h4 { @apply text-xl font-medium tracking-tight; }
+  h5 { @apply text-lg font-medium; }
+  h6 { @apply text-base font-medium; }
+  
+  /* Code Typography */
+  code, pre {
+    font-family: "JetBrains Mono", "Menlo", "Monaco", "Consolas", monospace;
+    font-feature-settings: "liga" 1, "calt" 1;
   }
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* Professional KRX Components */
+@layer components {
+  /* Enterprise Card Styles */
+  .krx-card {
+    @apply bg-card border border-border rounded-xl p-6;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-smooth);
+  }
+
+  .krx-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .krx-card-elevated {
+    box-shadow: var(--shadow-lg);
+    border: 1px solid hsl(var(--border));
+  }
+
+  /* Professional Button Styles */
+  .krx-btn-primary {
+    @apply bg-primary text-primary-foreground font-medium px-6 py-3 rounded-lg;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-fast);
+    border: 1px solid hsl(var(--primary));
+  }
+
+  .krx-btn-primary:hover {
+    background: hsl(var(--primary-hover));
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .krx-btn-secondary {
+    @apply bg-secondary text-secondary-foreground font-medium px-6 py-3 rounded-lg border;
+    transition: var(--transition-fast);
+  }
+
+  .krx-btn-secondary:hover {
+    @apply bg-accent;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Professional Input Styles */
+  .krx-input {
+    @apply bg-input border border-border rounded-lg px-4 py-3 text-foreground;
+    transition: var(--transition-fast);
+    font-size: 15px;
+  }
+
+  .krx-input:focus {
+    @apply outline-none ring-2 ring-ring border-primary;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Professional Layout */
+  .krx-container {
+    @apply max-w-7xl mx-auto px-6;
+  }
+
+  .krx-section {
+    @apply py-12;
+  }
+
+  /* Status Indicators */
+  .krx-status-success {
+    @apply bg-success/10 text-success border border-success/20 px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .krx-status-warning {
+    @apply bg-warning/10 text-warning border border-warning/20 px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .krx-status-error {
+    @apply bg-destructive/10 text-destructive border border-destructive/20 px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  /* Professional Transitions */
+  .krx-transition-fast {
+    transition: var(--transition-fast);
+  }
+
+  .krx-transition {
+    transition: var(--transition-smooth);
+  }
+
+  .krx-transition-slow {
+    transition: var(--transition-slow);
+  }
+
+  /* Premium Shadows */
+  .krx-shadow-sm { box-shadow: var(--shadow-sm); }
+  .krx-shadow-md { box-shadow: var(--shadow-md); }
+  .krx-shadow-lg { box-shadow: var(--shadow-lg); }
+  .krx-shadow-xl { box-shadow: var(--shadow-xl); }
+
+  /* Professional Gradients */
+  .krx-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .krx-gradient-subtle {
+    background: var(--gradient-subtle);
+  }
+
+  .krx-gradient-card {
+    background: var(--gradient-card);
+  }
+
+  /* Data Visualization */
+  .krx-metric {
+    @apply text-center p-6 rounded-xl border bg-card;
+  }
+
+  .krx-metric-value {
+    @apply text-3xl font-bold text-primary mb-2;
+  }
+
+  .krx-metric-label {
+    @apply text-sm text-muted-foreground font-medium;
+  }
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
