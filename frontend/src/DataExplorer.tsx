@@ -272,9 +272,11 @@ function parseCSV(csvText: string): { data: Record<string, unknown>[]; fields: D
 // KRX API 함수
 // ============================================================================
 
+const DATA_EXPLORE_API = `${KRX_API_URL}/api/data-explore`;
+
 async function checkKRXConnection(): Promise<boolean> {
   try {
-    const response = await fetch(`${KRX_API_URL}/`, {
+    const response = await fetch(`${DATA_EXPLORE_API}/status`, {
       method: 'GET',
       signal: AbortSignal.timeout(5000)
     });
@@ -284,7 +286,7 @@ async function checkKRXConnection(): Promise<boolean> {
   }
 }
 
-// 자연어 질의 API 호출
+// 자연어 질의 API 호출 (TODO: Lambda에 NL 라우트 추가 시 활성화)
 async function processNaturalLanguageQuery(
   query: string,
   execute: boolean = true
@@ -306,30 +308,24 @@ async function processNaturalLanguageQuery(
 async function fetchKRXData(
   dataType: DataTypeOption,
   market: MarketType,
-  topN: number = 50
+  _topN: number = 50
 ): Promise<KRXApiResponse> {
-  let endpoint = '';
   const params = new URLSearchParams();
+  let endpoint = '';
 
   if (dataType === 'fundamental') {
-    if (market === 'ALL') {
-      endpoint = '/api/stocks/all-markets';
-      params.set('top_n', String(topN));
-    } else {
-      endpoint = '/api/stocks/fundamental';
-      params.set('market', market);
-      params.set('top_n', String(topN));
-    }
+    // foreign_holding = PER/PBR/EPS/BPS/배당수익률 포함
+    endpoint = '/foreign-holding';
+    params.set('market', market === 'ALL' ? 'STK' : market === 'KOSPI' ? 'STK' : 'KSQ');
   } else if (dataType === 'market-cap') {
-    endpoint = '/api/stocks/market-cap';
-    params.set('market', market === 'ALL' ? 'KOSPI' : market);
-    params.set('top_n', String(topN));
+    endpoint = '/market-cap';
+    params.set('market', market === 'ALL' ? 'STK' : market === 'KOSPI' ? 'STK' : 'KSQ');
   } else if (dataType === 'sector') {
-    endpoint = '/api/stocks/sector';
-    params.set('market', market === 'ALL' ? 'KOSPI' : market);
+    endpoint = '/sector-price';
+    params.set('market', market === 'ALL' ? 'STK' : market === 'KOSPI' ? 'STK' : 'KSQ');
   }
 
-  const response = await fetch(`${KRX_API_URL}${endpoint}?${params}`, {
+  const response = await fetch(`${DATA_EXPLORE_API}${endpoint}?${params}`, {
     signal: AbortSignal.timeout(30000)
   });
 
@@ -488,12 +484,204 @@ const DataExplorer: React.FC = () => {
     setLastUpdated(null);
   }, []);
 
-  // Graphic Walker 설정
+  // Graphic Walker 설정 — 보라색 테마 + 한글화 + 툴바 정리
   const gwConfig = useMemo(() => ({
     i18nLang: 'ko-KR' as const,
-    themeKey: 'vega' as const,
-    dark: 'light' as const,
+    appearance: 'light' as const,
+
+    // UI 테마 — 프로젝트 보라색 톤 통일
+    uiTheme: {
+      light: {
+        background: '#fafafa',
+        foreground: '#1a1a2e',
+        primary: '#7c3aed',
+        'primary-foreground': '#ffffff',
+        border: '#e5e7eb',
+        ring: '#7c3aed',
+        muted: '#f3f0ff',
+        'muted-foreground': '#6b7280',
+        accent: '#ede9fe',
+        'accent-foreground': '#4c1d95',
+        dimension: '#7c3aed',
+        measure: '#f59e0b',
+      },
+      dark: {
+        background: '#1a1a2e',
+        foreground: '#e5e7eb',
+        primary: '#a78bfa',
+        'primary-foreground': '#1a1a2e',
+        border: '#374151',
+        ring: '#a78bfa',
+        muted: '#2d2d44',
+        'muted-foreground': '#9ca3af',
+        accent: '#3b3660',
+        'accent-foreground': '#c4b5fd',
+        dimension: '#a78bfa',
+        measure: '#fbbf24',
+      },
+    },
+
+    // Vega-Lite 차트 테마 — 보라색 계열
+    vizThemeConfig: {
+      light: {
+        background: 'transparent',
+        area: { fill: '#7c3aed' },
+        bar: { fill: '#7c3aed' },
+        circle: { fill: '#7c3aed' },
+        line: { stroke: '#7c3aed', strokeWidth: 2 },
+        point: { fill: '#7c3aed' },
+        rect: { fill: '#7c3aed' },
+        axis: {
+          gridColor: '#e5e7eb',
+          labelColor: '#6b7280',
+          titleColor: '#374151',
+          labelFont: 'Pretendard Variable, Pretendard, sans-serif',
+          titleFont: 'Pretendard Variable, Pretendard, sans-serif',
+        },
+        legend: {
+          labelColor: '#6b7280',
+          titleColor: '#374151',
+          labelFont: 'Pretendard Variable, Pretendard, sans-serif',
+          titleFont: 'Pretendard Variable, Pretendard, sans-serif',
+        },
+        range: {
+          category: [
+            '#7c3aed', '#f59e0b', '#10b981', '#3b82f6', '#ef4444',
+            '#8b5cf6', '#f97316', '#06b6d4', '#ec4899', '#84cc16',
+          ],
+        },
+      },
+      dark: {
+        background: 'transparent',
+        area: { fill: '#a78bfa' },
+        bar: { fill: '#a78bfa' },
+        circle: { fill: '#a78bfa' },
+        line: { stroke: '#a78bfa', strokeWidth: 2 },
+        point: { fill: '#a78bfa' },
+        rect: { fill: '#a78bfa' },
+        axis: {
+          gridColor: '#374151',
+          labelColor: '#9ca3af',
+          titleColor: '#d1d5db',
+          labelFont: 'Pretendard Variable, Pretendard, sans-serif',
+          titleFont: 'Pretendard Variable, Pretendard, sans-serif',
+        },
+        legend: {
+          labelColor: '#9ca3af',
+          titleColor: '#d1d5db',
+          labelFont: 'Pretendard Variable, Pretendard, sans-serif',
+          titleFont: 'Pretendard Variable, Pretendard, sans-serif',
+        },
+        range: {
+          category: [
+            '#a78bfa', '#fbbf24', '#34d399', '#60a5fa', '#f87171',
+            '#c084fc', '#fb923c', '#22d3ee', '#f472b6', '#a3e635',
+          ],
+        },
+      },
+    },
+
+    // 툴바 정리 — 불필요한 버튼 숨김
+    toolbar: {
+      exclude: ['kanaries', 'debug', 'painter', 'export_code'],
+    },
+
+    // 한글 번역
+    i18nResources: {
+      'ko-KR': {
+        translation: {
+          // 탭
+          'main.tabpanel.DatasetFields': '데이터',
+          'main.tabpanel.Visualization': '시각화',
+          'main.tabpanel.chartName': '차트',
+          'main.tabpanel.new': '+ 새 차트',
+          // 필드
+          'main.field.field_list': '필드 목록',
+          'main.field.filter': '필터',
+          'main.field.x_axis': 'X축',
+          'main.field.y_axis': 'Y축',
+          'main.field.color': '색상',
+          'main.field.opacity': '투명도',
+          'main.field.size': '크기',
+          'main.field.shape': '모양',
+          'main.field.details': '세부사항',
+          'main.field.drop_field_here': '여기에 필드를 놓으세요',
+          // 마크 타입
+          'constant.mark_type.auto': '자동',
+          'constant.mark_type.bar': '막대',
+          'constant.mark_type.line': '선',
+          'constant.mark_type.area': '영역',
+          'constant.mark_type.point': '점',
+          'constant.mark_type.circle': '원',
+          'constant.mark_type.tick': '틱',
+          'constant.mark_type.rect': '사각형',
+          'constant.mark_type.arc': '호',
+          'constant.mark_type.boxplot': '상자수염',
+          'constant.mark_type.table': '표',
+          'constant.mark_type.text': '텍스트',
+          // 집계
+          'constant.aggregation.sum': '합계',
+          'constant.aggregation.mean': '평균',
+          'constant.aggregation.count': '개수',
+          'constant.aggregation.median': '중앙값',
+          'constant.aggregation.min': '최솟값',
+          'constant.aggregation.max': '최댓값',
+          'constant.aggregation.variance': '분산',
+          'constant.aggregation.stdev': '표준편차',
+          // 설정
+          'main.tabpanel.settings.toggle.aggregation': '집계',
+          'main.tabpanel.settings.toggle.stack': '스택',
+          'main.tabpanel.settings.sort.asc': '오름차순',
+          'main.tabpanel.settings.sort.desc': '내림차순',
+          // 공통
+          'actions.undo': '실행 취소',
+          'actions.redo': '다시 실행',
+          'actions.export_chart': '차트 내보내기',
+          'actions.export_csv': 'CSV 다운로드',
+        },
+      },
+    },
   }), []);
+
+  // 기본 프리셋 차트 — 시가총액 막대차트
+  const defaultChart = useMemo(() => [{
+    visId: 'preset-market-cap',
+    name: '시가총액 TOP 20',
+    encodings: {
+      dimensions: [
+        { fid: '종목명', name: '종목명', semanticType: 'nominal', analyticType: 'dimension', dragId: 'd-name' },
+      ],
+      measures: [
+        { fid: '시가총액(조)', name: '시가총액(조)', semanticType: 'quantitative', analyticType: 'measure', dragId: 'm-cap', aggName: 'sum' },
+      ],
+      rows: [
+        { fid: '종목명', name: '종목명', semanticType: 'nominal', analyticType: 'dimension', dragId: 'd-name-r' },
+      ],
+      columns: [
+        { fid: '시가총액(조)', name: '시가총액(조)', semanticType: 'quantitative', analyticType: 'measure', dragId: 'm-cap-c', aggName: 'sum' },
+      ],
+      color: [],
+      opacity: [],
+      size: [],
+      shape: [],
+      radius: [],
+      theta: [],
+      details: [],
+      filters: [],
+      text: [],
+    },
+    config: {
+      defaultAggregated: true,
+      geoms: ['bar'],
+      coordSystem: 'generic',
+      limit: 20,
+    },
+    layout: {
+      showActions: false,
+      showTableSummary: false,
+      size: { mode: 'auto' as const },
+    },
+  }], []);
 
   // 데이터 소스 배지 색상
   const getDataSourceBadgeStyle = () => {
@@ -604,7 +792,7 @@ const DataExplorer: React.FC = () => {
                         <div className="text-lg font-bold text-green-700">
                           {DATA_COVERAGE.filter(d => d.status === 'working').length}/{DATA_COVERAGE.length} API 정상 작동
                         </div>
-                        <div className="text-xs text-green-600">네이버 금융 경유로 KRX 로그인 우회 — data.krx.co.kr 인증 차단 항목은 네이버 폴백 사용</div>
+                        <div className="text-xs text-green-600">KRX ID/PW 로그인 + 네이버 금융 폴백으로 전 데이터 커버리지 확보</div>
                       </div>
                     </div>
                   </div>
@@ -1030,6 +1218,7 @@ const DataExplorer: React.FC = () => {
           <GraphicWalker
             data={data}
             fields={fields}
+            chart={defaultChart}
             {...gwConfig}
           />
         </Suspense>
